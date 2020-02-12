@@ -41,7 +41,7 @@ class TokenManager:
 		if (self.i + nAhead) >= len(self.tokenList):
 			return None
 		return self.tokenList[self.i + nAhead]
-	
+
 	def shift(self, tid_expected=None):
 		if self.is_end():
 			raise Exception("token list is empty")
@@ -51,7 +51,7 @@ class TokenManager:
 
 		if tid_expected != None and tid_expected != tok_id:
 			raise Exception("expected token %s but got instead %s" % (tid_expected.name, tok_val))
-		
+
 		return (tok_id, tok_val)
 
 	def is_end(self):
@@ -64,7 +64,7 @@ class TokenManager:
 			result.append("%d: %s '%s'" % (k, tok_type.name, tok_val))
 		return "\n".join(result)
 
-	def str_brief(self):
+	def str_line(self):
 		return ' '.join([x[1] for x in self.tokenList[self.i:]])
 
 def tokenize(line):
@@ -113,13 +113,61 @@ def tokenize(line):
 
 class Term:
 	def __init__(self):
+		self.children = []
 		pass
+
+	# VariableNode overrides this one, substituting itself
+	def var_subst(self, name, term):
+		for i in range(len(self.children)):
+			self.children[i] = self.children[i].var_subst(name, term)
+		return self
+
+	# Application overrides this one, drawing attention to itself
+	def get_deepest_application_candidate(self, depth=0):
+		(record_depth, record_node) = (None, None)
+
+		if len(self.children) > 0:
+			(foo, bar) = self.children[0].get_deepest_application_candidate(depth+1)
+			if bar:
+				(record_depth, record_node) = (foo, bar)
+
+		if len(self.children) > 1:
+			(foo, bar) = self.children[1].get_deepest_application_candidate(depth+1)
+			if bar and foo > record_depth:
+				(record_depth, record_node) = (foo, bar)
+
+		return (record_depth, record_node)
+
+	# Application overrides this one, carrying out the application operation
+	def apply(self):
+		pass
+
+	#
+	def reduce_one(self, one):
+		if len(self.children) > 0 and self.children[0] == one:
+			self.children[0] = self.children[0].apply()
+			return True
+
+		if len(self.children) > 1 and self.children[1] == one:
+			self.children[1] = self.children[1].apply()
+			return True
+
+		if len(self.children) > 0:
+			tmp = self.children[0].reduce_one(one)
+			if tmp: return True
+
+		if len(self.children) > 1:
+			tmp = self.children[1].reduce_one(one)
+			if tmp: return True
+
+		return False
 
 class VariableNode(Term):
 	def __init__(self, name):
+		super().__init__()
 		self.name = name
 
-	def subst_global(self, name, term):
+	def var_subst(self, name, term):
 		if self.name == name:
 			return copy.deepcopy(term)
 		return self
@@ -127,48 +175,62 @@ class VariableNode(Term):
 	def str_line(self):
 		return self.name
 
-	def str_tree(self, depth=0):
-		indent = ' ' * 2*depth
-		return '%sVariable "%s"' % (indent, self.name)
+	def str_tree(self, node_hl=None, depth=0):
+		indent = '  ' * depth
+		mark = ' <--' if self==node_hl else ''
+		return '%sVariable "%s"%s' % (indent, self.name, mark)
 
 class AbstractionNode(Term):
 	def __init__(self, var_name, term):
 		self.var_name = var_name
-		self.term = term
-
-	def subst_global(self, name, term):
-		if self.var_name == name:
-			self.term = self.term.subst_global(name, term)
-		return self
+		self.children = [term]
 
 	def str_line(self):
-		return '\\%s[%s]' % (self.var_name, self.term.str_line())
+		return '\\%s[%s]' % (self.var_name, self.children[0].str_line())
 
-	def str_tree(self, depth=0):
-		indent = ' ' * 2*depth
-		result = '%sAbstraction %s\n' % (indent, self.var_name)
-		result += self.term.str_tree(depth+1)
+	def str_tree(self, node_hl=None, depth=0):
+		indent = '  ' * depth
+		mark = ' <--' if self==node_hl else ''
+		result = '%sAbstraction %s%s\n' % (indent, self.var_name, mark)
+		result += self.children[0].str_tree(node_hl, depth+1)
 		return result
 
 class ApplicationNode(Term):
 	def __init__(self, left, right):
-		self.left = left
-		self.right = right
+		self.children = [left, right]
 
-	def subst_global(self, name, term):
-		self.left.subst_global(name, term)
-		self.right.subst_global(name, term)
-		return self
+	def get_deepest_application_candidate(self, depth=0):
+		# any candidates deeper than us automatically win
+		(record_depth, record_node) = super().get_deepest_application_candidate(depth)
+		if record_node:
+			return (record_depth, record_node)
+
+		# we're a candidate if our left child is an abstraction
+		if isinstance(self.children[0], AbstractionNode):
+			return (depth, self)
+
+		# dead-end
+		return (None, None)
+
+	def apply(self):
+		abstraction = self.children[0]
+		argument = self.children[1]
+
+		varname = abstraction.var_name
+		body = abstraction.children[0]
+
+		return body.var_subst(varname, argument)
 
 	def str_line(self):
-		return '(%s %s)' % (self.left.str_line(), self.right.str_line())
+		return '(%s %s)' % (self.children[0].str_line(), self.children[1].str_line())
 
-	def str_tree(self, depth=0):
-		indent = ' ' * 2*depth
-		result = '%sApplication\n' % indent
-		result += self.left.str_tree(depth+1)
+	def str_tree(self, node_hl=None, depth=0):
+		indent = '  ' * depth
+		mark = ' <--' if self==node_hl else ''
+		result = '%sApplication%s\n' % (indent, mark)
+		result += self.children[0].str_tree(node_hl, depth+1)
 		result += '\n'
-		result += self.right.str_tree(depth+1)
+		result += self.children[1].str_tree(node_hl, depth+1)
 		return result
 
 #------------------------------------------------------------------------------
@@ -181,7 +243,7 @@ class ApplicationNode(Term):
 # production to follow next. Here's a recursive descent parser:
 
 def parse_term(mgr):
-	#print('parse_term(...\'%s\')' % mgr.str_brief())
+	#print('parse_term(...\'%s\')' % mgr.str_line())
 
 	type_cur = mgr.peek()[0]
 
@@ -195,7 +257,7 @@ def parse_term(mgr):
 		raise Exception('error at: %s' % type_cur)
 
 def parse_abstraction(mgr):
-	#print('parse_abstraction(...\'%s\')' % mgr.str_brief())
+	#print('parse_abstraction(...\'%s\')' % mgr.str_line())
 
 	mgr.shift(TID.LAMBDA)
 	(tok_type, var_name) = mgr.shift(TID.VARIABLE)
@@ -205,13 +267,13 @@ def parse_abstraction(mgr):
 	return AbstractionNode(var_name, body)
 
 def parse_variable(mgr):
-	#print('parse_variable(...\'%s\')' % mgr.str_brief())
+	#print('parse_variable(...\'%s\')' % mgr.str_line())
 
 	(tok_type, var_name) = mgr.shift(TID.VARIABLE)
 	return VariableNode(var_name)
 
 def parse_application(mgr):
-	#print('parse_application(...\'%s\')' % mgr.str_brief())
+	#print('parse_application(...\'%s\')' % mgr.str_line())
 
 	mgr.shift(TID.LPAREN)
 	left = parse_term(mgr)
@@ -234,21 +296,42 @@ def parse(expression):
 # UTILITIES
 ###############################################################################
 
-def subst_global_var(term, var_name, subterm):
-	return term.subst_global(var_name, subterm)
+def var_subst_var(term, var_name, subterm):
+	return term.var_subst(var_name, subterm)
 
-def subst_global_vars(term, var_dict):
+def var_subst_vars(term, var_dict):
 	for (var_name, subterm) in var_dict.items():
-		term = term.subst_global(var_name, subterm)
+		print('substituting %s for %s' % (var_name, subterm.str_line()))
+		term = term.var_subst(var_name, subterm)
 
 	return term
 
 def evaluate(line, var_dict):
 	term = parse(line)
 	#print('tree: ', term.str_tree())
-	term = subst_global_vars(term, var_dict)
+	term = var_subst_vars(term, var_dict)
 	#print('tree: ', term.str_tree())
 	return term
+
+def lambda_reduce(node):
+	step = 0
+	while 1:
+		print('---- reduction step %d ----' % step)
+		(depth, target) = node.get_deepest_application_candidate()
+		if target == None:
+			print('no application candidates')
+			break
+
+		print(node.str_tree(target))
+
+		if depth == 0:
+			node = node.apply()
+		else:
+			node.reduce_one(target)
+
+		step += 1
+
+	return node
 
 ###############################################################################
 # MAIN
@@ -281,7 +364,7 @@ if __name__ == '__main__':
 			info('assigning to: %s' % lhs)
 			variables[lhs] = ast
 			continue
-			
+
 		m = re.match(r'^!tree (.*)', line)
 		if m:
 			rhs = m.group(1)
@@ -294,3 +377,6 @@ if __name__ == '__main__':
 
 		term = evaluate(line, variables)
 		print(term.str_tree())
+		term = lambda_reduce(term)
+		print(term.str_tree())
+
