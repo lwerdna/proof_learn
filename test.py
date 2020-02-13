@@ -1,12 +1,20 @@
 #!/usr/bin/env python
 
+import copy
 from node import ApplicationNode, AbstractionNode, VariableNode
 from parser import parse_str as ps
 from engine import reduce_
 
-def apply(a, b):
+def lapply(a, b, c=None):
+	a = copy.deepcopy(a)
+	b = copy.deepcopy(b)
+
 	tmp = ApplicationNode(a, b)
 	tmp = reduce_(tmp)
+
+	if c:
+		tmp = lapply(tmp, c)
+
 	return tmp
 
 ltrue = ps('\\x[\\y[x]]')
@@ -16,8 +24,16 @@ ite = ps('\\cond[\\a[\\b[((cond a) b)]]]')
 assert ltrue == ps('\\foo[\\bar[x]]')
 assert ite == ps('\\foo[\\bar[\\baz[((lala a) b)]]]')
 
-assert apply(ite, lfalse) == lfalse
-assert apply(ite, ltrue) == ltrue
+assert lapply(ite, lfalse) == lfalse
+assert lapply(ite, ltrue) == ltrue
+
+lor = ps('\\a[((a \\dummy[\\x[\\y[x]]]) \\z[z])]')
+
+ident = ps('\\x[x]')
+dummy = ps('dummy')
+
+assert lapply(lor, ltrue, dummy) == ltrue
+assert lapply(lor, lfalse) == ident
 
 # from https://github.com/andrejbauer/plzoo
 #
