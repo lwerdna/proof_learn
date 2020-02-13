@@ -3,6 +3,7 @@
 # every node in the tree is a TermNode, of which three classes derive:
 # AbstractionNode, ApplicationNode, and VariableNode
 
+import re
 import copy
 
 class TermNode:
@@ -20,11 +21,11 @@ class TermNode:
 	# currently inefficiently visits the whole tree
 	def apply(self, target):
 		# if one of our children is the target, perform the application
-		if len(self.children) > 0 and self.children[0] == target:
+		if len(self.children) > 0 and self.children[0] is target:
 			self.children[0] = self.children[0].apply(target)
 			return self
 
-		if len(self.children) > 1 and self.children[1] == target:
+		if len(self.children) > 1 and self.children[1] is target:
 			self.children[1] = self.children[1].apply(target)
 			return self
 
@@ -36,6 +37,18 @@ class TermNode:
 
 		# done
 		return self
+
+	def __eq__(self, other):
+		a = self.str_line()
+		b = other.str_line()
+		a = re.sub(r'\w+', 'x', a)
+		b = re.sub(r'\w+', 'x', b)
+		#print('left as un-variabled string: %s' % a)
+		#print('right as un-variabled string: %s' % b)
+		return a == b
+
+	def __ne__(self, other):
+		return not (self == other)
 
 class VariableNode(TermNode):
 	def __init__(self, name):
@@ -52,7 +65,7 @@ class VariableNode(TermNode):
 
 	def str_tree(self, node_hl=None, depth=0):
 		indent = '  ' * depth
-		mark = ' <--' if self==node_hl else ''
+		mark = ' <--' if self is node_hl else ''
 		return '%sVariable "%s"%s' % (indent, self.name, mark)
 
 class AbstractionNode(TermNode):
@@ -65,7 +78,7 @@ class AbstractionNode(TermNode):
 
 	def str_tree(self, node_hl=None, depth=0):
 		indent = '  ' * depth
-		mark = ' <--' if self==node_hl else ''
+		mark = ' <--' if self is node_hl else ''
 		result = '%sAbstraction %s%s\n' % (indent, self.var_name, mark)
 		result += self.children[0].str_tree(node_hl, depth+1)
 		return result
@@ -92,7 +105,7 @@ class ApplicationNode(TermNode):
 
 	def str_tree(self, node_hl=None, depth=0):
 		indent = '  ' * depth
-		mark = ' <--' if self==node_hl else ''
+		mark = ' <--' if self is node_hl else ''
 		result = '%sApplication%s\n' % (indent, mark)
 		result += self.children[0].str_tree(node_hl, depth+1)
 		result += '\n'

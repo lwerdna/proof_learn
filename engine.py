@@ -34,7 +34,7 @@ def reducible(term):
 # reduce a term, single-step style
 def reduce_step(term, target=None):
 	if not target:
-		target = term.reducible()
+		target = reducible(term)
 	if not target:
 		return term
 
@@ -44,4 +44,11 @@ def reduce_step(term, target=None):
 
 	# else return 
 	term.apply(target)
+	return term
+
+def reduce_(term):
+	target = reducible(term)
+	while target:
+		term = reduce_step(term, target)
+		target = reducible(term)
 	return term
