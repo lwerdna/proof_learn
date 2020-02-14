@@ -67,9 +67,9 @@ def tokenize(line):
 		elif c == '.':
 			tokens.append((TID.DOT, '.'))
 			i += 1
-		elif c.islower():
+		elif c.isidentifier():
 			value = ''
-			while i<len(chars) and chars[i].isalpha():
+			while i<len(chars) and chars[i].isidentifier():
 				value += chars[i]
 				i += 1
 			tokens.append((TID.VARIABLE, value))

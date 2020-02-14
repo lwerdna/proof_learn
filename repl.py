@@ -3,8 +3,7 @@
 import re
 import readline
 
-from parser import parse_str
-from engine import reducible, reduce_step
+from engine import reducible, reduce_step, to_tree, assign_macro
 
 RED = '\x1B[31m'
 GREEN = '\x1B[32m'
@@ -22,10 +21,9 @@ def load_vars(term):
 	return term
 
 if __name__ == '__main__':
-
-	variables['true'] = parse_str('\\x[\\y[x]]')
-	variables['false'] = parse_str('\\x[\\y[y]]')
-	variables['ite'] = parse_str('\\cond[\\a[\\b[((cond a) b)]]]')
+	assign_macro('TRUE', '\\x[\\y[x]]')
+	assign_macro('FALSE', '\\x[\\y[y]]')
+	assign_macro('ITE', '\\cond[\\a[\\b[((cond a) b)]]]')
 
 	while 1:
 		try:
@@ -42,25 +40,19 @@ if __name__ == '__main__':
 		m = re.match(r'^(\w+) ?= ?(.*)', line)
 		if m:
 			(lhs, rhs) = m.group(1, 2)
-			term = parse_str(rhs)
-			info('assigning %s to %s' % (rhs, lhs))
-			variables[lhs] = term
+			assign_macro(lhs, rhs)
 			continue
 
 		# evaluate
-		term = parse_str(line)
-		term = load_vars(term)
-		#print(term.str_tree())
-
-		while 1:
-			target = reducible(term)
-			if not target: break
-			#print('target is: %s' % target.str_line())
-
-			print(term.str_tree(target)) 
-			print('----')
-
-			term = reduce_step(term, target)
-
+		term = to_tree(line)
 		print(term.str_tree())
+#		while 1:
+#			#print('target is: %s' % target.str_line())
+#
+#			print(term.str_tree(target)) 
+#			print('----')
+#
+#			term = reduce_step(term, target)
+#
+#		print(term.str_tree())
 

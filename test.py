@@ -2,38 +2,38 @@
 
 import copy
 from node import ApplicationNode, AbstractionNode, VariableNode
-from parser import parse_str as ps
-from engine import reduce_
+from parser import parse_expr as ps
+from engine import reduce_, equals, assign_macro
 
-def lapply(a, b, c=None):
-	a = copy.deepcopy(a)
-	b = copy.deepcopy(b)
+# alpha equivalence
+assign_macro('TRUE', '\\x[\\y[x]]')
+assign_macro('FALSE', '\\x[\\y[y]]')
+assert equals('TRUE', '\\foo[\\bar[foo]]')
+assert equals('FALSE', '\\foo[\\bar[bar]]')
 
-	tmp = ApplicationNode(a, b)
-	tmp = reduce_(tmp)
+# do true/false work
+assert equals(reduce_('((TRUE a) b)'), 'a')
+assert equals(reduce_('((FALSE a) b)'), 'b')
+#assert equals(reduce_('((TRUE FALSE) FALSE)'), 'FALSE')
 
-	if c:
-		tmp = lapply(tmp, c)
+assign_macro('ITE', '\\cond[\\a[\\b[((cond a) b)]]]')
+assert equals(reduce_('(ITE FALSE)'), 'FALSE')
+assert equals(reduce_('(ITE TRUE)'), 'TRUE')
 
-	return tmp
+assign_macro('RET_TRUE', '\\x[TRUE]')
+assert equals(reduce_('(RET_TRUE FALSE)'), 'TRUE')
+assert equals(reduce_('(RET_TRUE foo)'), 'TRUE')
+assert equals(reduce_('(RET_TRUE bar)'), 'TRUE')
 
-ltrue = ps('\\x[\\y[x]]')
-lfalse = ps('\\x[\\y[y]]')
-ite = ps('\\cond[\\a[\\b[((cond a) b)]]]')
+assign_macro('IDENT', '\\x[x]')
+assert equals(reduce_('(IDENT foo)'), 'foo')
+assert equals(reduce_('(IDENT TRUE)'), 'TRUE')
+assert equals(reduce_('(IDENT FALSE)'), 'FALSE')
 
-assert ltrue == ps('\\foo[\\bar[x]]')
-assert ite == ps('\\foo[\\bar[\\baz[((lala a) b)]]]')
-
-assert lapply(ite, lfalse) == lfalse
-assert lapply(ite, ltrue) == ltrue
-
-lor = ps('\\a[((a \\dummy[\\x[\\y[x]]]) \\z[z])]')
-
-ident = ps('\\x[x]')
-dummy = ps('dummy')
-
-assert lapply(lor, ltrue, dummy) == ltrue
-assert lapply(lor, lfalse) == ident
+assign_macro('OR', '\\x[((x RET_TRUE) IDENT)]')
+assert equals(reduce_('((OR TRUE) DUMMY)'), 'TRUE')
+assert equals(reduce_('((OR FALSE) FALSE)'), 'FALSE')
+assert equals(reduce_('(OR FALSE)'), 'IDENT')
 
 # from https://github.com/andrejbauer/plzoo
 #

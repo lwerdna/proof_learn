@@ -9,7 +9,11 @@ import copy
 class TermNode:
 	def __init__(self):
 		self.children = []
-		pass
+		self.parent = None
+		self.id = -1
+
+		# these get decorated later, after parsing
+		self.depth = -1	# depth of this node (recalculated after reductions)
 
 	# VariableNode overrides this one, substituting itself
 	def var_subst(self, name, term):
@@ -17,30 +21,17 @@ class TermNode:
 			self.children[i] = self.children[i].var_subst(name, term)
 		return self
 
-	# Perform the application on node <target>
-	# currently inefficiently visits the whole tree
-	def apply(self, target):
-		# if one of our children is the target, perform the application
-		if len(self.children) > 0 and self.children[0] is target:
-			self.children[0] = self.children[0].apply(target)
-			return self
-
-		if len(self.children) > 1 and self.children[1] is target:
-			self.children[1] = self.children[1].apply(target)
-			return self
-
-		# else search deeper
-		if len(self.children) > 0:
-			self.children[0].apply(target)
-		if len(self.children) > 1:
-			self.children[1].apply(target)
-
-		# done
-		return self
+	def update_children(self, old, new):
+		if self.degree > 0 and self.children[0] is old:
+			self.children[0] = new
+		if self.degree > 1 and self.children[1] is old:
+			self.children[1] = new
 
 	def __eq__(self, other):
-		a = self.str_line()
-		b = other.str_line()
+		assert not (other is None) # else None -> 'None' -> 'x'
+		#print('__eq__(\"%s\", \"%s\")' % (self, other))
+		a = str(self)
+		b = str(other)
 		a = re.sub(r'\w+', 'x', a)
 		b = re.sub(r'\w+', 'x', b)
 		#print('left as un-variabled string: %s' % a)
@@ -53,6 +44,7 @@ class TermNode:
 class VariableNode(TermNode):
 	def __init__(self, name):
 		super().__init__()
+		self.degree = 0
 		self.name = name
 
 	def var_subst(self, name, term):
@@ -60,53 +52,55 @@ class VariableNode(TermNode):
 			return copy.deepcopy(term)
 		return self
 
-	def str_line(self):
-		return self.name
+	def __str__(self):
+		return '%d.%s' % (self.id, self.name)
 
 	def str_tree(self, node_hl=None, depth=0):
 		indent = '  ' * depth
 		mark = ' <--' if self is node_hl else ''
-		return '%sVariable "%s"%s' % (indent, self.name, mark)
+		return '%s%d.Variable "%s"%s' % (indent, self.id, self.name, mark)
+		#return '%sVariable "%s"%s .parent=%s' % (indent, self.name, mark, self.parent)
 
 class AbstractionNode(TermNode):
 	def __init__(self, var_name, term):
+		super().__init__()
+		self.degree = 1
 		self.var_name = var_name
 		self.children = [term]
 
-	def str_line(self):
-		return '\\%s[%s]' % (self.var_name, self.children[0].str_line())
+		# decorated after parsing
+		self.bindings = [] # references to bound VariableNode
+
+	def __str__(self):
+		return '\\%s[%s]' % (self.var_name, str(self.children[0]))
 
 	def str_tree(self, node_hl=None, depth=0):
 		indent = '  ' * depth
 		mark = ' <--' if self is node_hl else ''
-		result = '%sAbstraction %s%s\n' % (indent, self.var_name, mark)
+		result = '%s%d.Abstraction %s%s' % (indent, self.id, self.var_name, mark)
+		if self.bindings:
+			result += ' bound:'
+			for b in self.bindings:
+				result += ' %d' % b.id
+		result += '\n'
+		#result = '%sAbstraction %s%s .parent=%s\n' % (indent, self.var_name, mark, self.parent)
 		result += self.children[0].str_tree(node_hl, depth+1)
 		return result
 
 class ApplicationNode(TermNode):
 	def __init__(self, left, right):
+		super().__init__()
+		self.degree = 2
 		self.children = [left, right]
 
-	def apply(self, target):
-		if self != target:
-			return super().apply(target)
-
-		# I'm the ApplicationNode they want executed! do it!
-		abstraction = self.children[0]
-		argument = self.children[1]
-
-		varname = abstraction.var_name
-		body = abstraction.children[0]
-
-		return body.var_subst(varname, argument)
-
-	def str_line(self):
-		return '(%s %s)' % (self.children[0].str_line(), self.children[1].str_line())
+	def __str__(self):
+		return '(%s %s)' % (str(self.children[0]), str(self.children[1]))
 
 	def str_tree(self, node_hl=None, depth=0):
 		indent = '  ' * depth
 		mark = ' <--' if self is node_hl else ''
-		result = '%sApplication%s\n' % (indent, mark)
+		result = '%s%d.Application%s\n' % (indent, self.id, mark)
+		#result = '%sApplication%s .parent=%s\n' % (indent, mark, self.parent)
 		result += self.children[0].str_tree(node_hl, depth+1)
 		result += '\n'
 		result += self.children[1].str_tree(node_hl, depth+1)

@@ -2,34 +2,96 @@
 #
 # interact with the lambda term to do reductions, etc.
 
+import copy
 from node import ApplicationNode, AbstractionNode, VariableNode
+from parser import parse_expr
 
-def get_all_nodes(term):
+macros = {}
+
+def get_all_nodes(tree):
 	result = []
+	queue = [tree]
+	while queue:
+		result += queue
+		tmp = []
+		for node in queue:
+			tmp += node.children
+		queue = tmp
 
+	return result
+
+# should be called MULTIPLE times: after parsing, and after B-reduction,
+# since depths will change
+def decorate(ast):
+	print(ast.str_tree())
+
+	curid = 0
 	depth = 0
-	queue = [term]
+	queue = [ast]
 	while queue:
 		for node in queue:
-			result.append((node, depth))
+			node.depth = depth
+			node.id = curid
+			curid += 1
 
 		tmp = []
 		for node in queue:
-			tmp = node.children
+			tmp += node.children
 
 		queue = tmp
 		depth += 1
 
+# have each AbstractionNode point to all its bound VariableNodes
+# assumes the given ast has had its depths decorated
+#
+# should be called ONCE after parsing, depth decorating
+# (the bindings shouldn't change even during B-reduction)
+def decorate_bindings(ast):
+	nodes = get_all_nodes(ast)
+	abstractions = [x for x in nodes if isinstance(x, AbstractionNode)]
+	variables = [x for x in nodes if isinstance(x, VariableNode)]
+	for anode in abstractions:
+		for vnode in [x for x in variables if x.depth > anode.depth and x.name == anode.var_name]:
+			anode.bindings.append(vnode)
+
+def substitute_macros(ast):
+	global macros
+	result = ast
+	for var in [x for x in get_all_nodes(ast) if isinstance(x, VariableNode)]:
+		if var.name in macros:
+			new = copy.deepcopy(macros[var.name])
+			if not var.parent:
+				result = new
+			else:
+				var.parent.update_children(var, new)
+				new.parent = var.parent
 	return result
 
-# return the ApplicationNode that will be the target of the next reduce step
+def to_tree(expr:str):
+	ast = parse_expr(expr)
+	#print(ast.str_tree())
+	decorate(ast)
+	decorate_bindings(ast)
+	ast = substitute_macros(ast)
+	decorate(ast)
+	return ast
+
+# note: macros are NOT lexical, they're tree replacements that happen after parsing and binding
+def assign_macro(name:str, expr:str):
+	global macros
+	macros[name] = to_tree(expr)
+	print('assigned %s to:' % name)
+	print(macros[name].str_tree())
+
+# if reducible -> return the ApplicationNode that will be the target of the next reduce step
+#         else -> return None
 def reducible(term):
-	nodes_and_depths = get_all_nodes(term)
-	nodes_and_depths = filter(lambda x: isinstance(x[0], ApplicationNode), nodes_and_depths)
-	nodes_and_depths = sorted(nodes_and_depths, key=lambda x: x[1], reverse=True)
-	if not nodes_and_depths:
-		return None
-	return nodes_and_depths[0][0]
+	assert not term is None
+	nodes = get_all_nodes(term)
+	nodes = [x for x in nodes if isinstance(x, ApplicationNode) and isinstance(x.children[0], AbstractionNode)]
+	if not nodes: return None
+	nodes = sorted(nodes, key=lambda x: x.depth, reverse=True)
+	return nodes[0]
 
 # reduce a term, single-step style
 def reduce_step(term, target=None):
@@ -38,17 +100,73 @@ def reduce_step(term, target=None):
 	if not target:
 		return term
 
-	# if the target is the tree itself, return what he leaves behind
-	if target == term:
-		return term.apply(target)
+	# substitute all variables bound by abst with val:
+	#
+	#    appl
+	#    /  \
+	#  abst  val
+	#   |
+	#  body
+	#
+	appl = target
+	val = appl.children[1] 
+	abst = appl.children[0]
+	body = abst.children[0]
 
-	# else return 
-	term.apply(target)
-	return term
+	#assert not (abst is val)
+	#print('appl: %s' % appl)
+	#print('val: %s' % val)
+	#print('abst: %s' % abst)
+	#print('body: %s' % body)
+	#assert not (body is val)
 
-def reduce_(term):
-	target = reducible(term)
-	while target:
-		term = reduce_step(term, target)
+	assert isinstance(appl, ApplicationNode)
+	assert isinstance(abst, AbstractionNode)
+
+	# replace all bound variables
+	#print('changing bindings: ', abst.bindings)
+	#print('changing bindings: ', list(map(str, abst.bindings)))
+	for var in abst.bindings:
+		var.parent.update_children(var, copy.deepcopy(val))
+
+	body = abst.children[0] # important! body could have been a replaced variable
+
+	# replace link to appl with links to body
+	if not appl.parent:
+		result = body
+		body.parent = None
+	else:
+		appl.parent.update_children(appl, body)
+		body.parent = appl.parent
+		result = term
+
+	# depths have changed, update
+	decorate(result)
+	return result
+
+DEBUG = True
+def reduce_(term:str, target=None):
+	term = to_tree(term)
+
+	if not target:
 		target = reducible(term)
+
+	while target:
+		if DEBUG: print(term.str_tree(target))
+		term = reduce_step(term, target)
+		if DEBUG: print('----')
+		target = reducible(term)
+
+	if DEBUG:
+		if DEBUG: print('----')
+		print('returning reduced:')
+		print(term.str_tree())
+
 	return term
+
+def equals(a, b):
+	if type(a) == str:
+		a = to_tree(a)
+	if type(b) == str:
+		b = to_tree(b)
+	return a == b

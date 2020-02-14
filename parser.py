@@ -25,6 +25,12 @@ def parse_term(mgr):
 	else:
 		raise Exception('error at: %s' % type_cur)
 
+def parse_variable(mgr):
+	#print('parse_variable(...\'%s\')' % mgr.str_line())
+
+	(tok_type, var_name) = mgr.shift(TID.VARIABLE)
+	return VariableNode(var_name)
+
 def parse_abstraction(mgr):
 	#print('parse_abstraction(...\'%s\')' % mgr.str_line())
 
@@ -33,13 +39,9 @@ def parse_abstraction(mgr):
 	mgr.shift(TID.LBRACK)
 	body = parse_term(mgr)
 	mgr.shift(TID.RBRACK)
-	return AbstractionNode(var_name, body)
-
-def parse_variable(mgr):
-	#print('parse_variable(...\'%s\')' % mgr.str_line())
-
-	(tok_type, var_name) = mgr.shift(TID.VARIABLE)
-	return VariableNode(var_name)
+	abst = AbstractionNode(var_name, body)
+	body.parent = abst
+	return abst
 
 def parse_application(mgr):
 	#print('parse_application(...\'%s\')' % mgr.str_line())
@@ -48,7 +50,10 @@ def parse_application(mgr):
 	left = parse_term(mgr)
 	right = parse_term(mgr)
 	mgr.shift(TID.RPAREN)
-	return ApplicationNode(left, right)
+	app = ApplicationNode(left, right)
+	left.parent = app
+	right.parent = app
+	return app
 
 def parse(mgr):
 	tree = parse_term(mgr)
@@ -56,7 +61,7 @@ def parse(mgr):
 		raise Exception("parse is done, but tokens remain %s...", mgr.peek())
 	return tree
 
-def parse_str(expression):
-	mgr = tokenize(expression)
+def parse_expr(expr:str):
+	mgr = tokenize(expr)
 	tree = parse(mgr)
 	return tree
