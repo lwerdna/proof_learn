@@ -10,7 +10,7 @@ class TermNode:
 	def __init__(self):
 		self.children = []
 		self.parent = None
-		self.id = -1
+		self.id = 0
 
 		# these get decorated later, after parsing
 		self.depth = -1	# depth of this node (recalculated after reductions)
@@ -26,6 +26,13 @@ class TermNode:
 			self.children[0] = new
 		if self.degree > 1 and self.children[1] is old:
 			self.children[1] = new
+
+	def descendents(self):
+		result = []
+		for child in self.children:
+			result.append(child)
+			result += child.descendents()
+		return result
 
 	def __eq__(self, other):
 		assert not (other is None) # else None -> 'None' -> 'x'
@@ -47,18 +54,24 @@ class VariableNode(TermNode):
 		self.degree = 0
 		self.name = name
 
+		# decorated after parsing
+		self.binding = None # reference to AbstractionNode
+
 	def var_subst(self, name, term):
 		if self.name == name:
 			return copy.deepcopy(term)
 		return self
 
 	def __str__(self):
-		return '%d.%s' % (self.id, self.name)
+		result = '%d.%s' % (self.id, self.name)
+		if self.binding:
+			result += ' bound:%d' % self.binding.id
+		return result
 
 	def str_tree(self, node_hl=None, depth=0):
 		indent = '  ' * depth
 		mark = ' <--' if self is node_hl else ''
-		return '%s%d.Variable "%s"%s' % (indent, self.id, self.name, mark)
+		return '%s%d.Variable "%s"%s%s' % (indent, self.id, self.name, ' bound=%d'%self.binding.id if self.binding else '', mark)
 		#return '%sVariable "%s"%s .parent=%s' % (indent, self.name, mark, self.parent)
 
 class AbstractionNode(TermNode):
@@ -68,21 +81,16 @@ class AbstractionNode(TermNode):
 		self.var_name = var_name
 		self.children = [term]
 
-		# decorated after parsing
-		self.bindings = [] # references to bound VariableNode
-
 	def __str__(self):
 		return '\\%s[%s]' % (self.var_name, str(self.children[0]))
+
+	def str_lone(self):
+		return '\\%d.%s[...]' % (self.id, self.var_name)
 
 	def str_tree(self, node_hl=None, depth=0):
 		indent = '  ' * depth
 		mark = ' <--' if self is node_hl else ''
-		result = '%s%d.Abstraction %s%s' % (indent, self.id, self.var_name, mark)
-		if self.bindings:
-			result += ' bound:'
-			for b in self.bindings:
-				result += ' %d' % b.id
-		result += '\n'
+		result = '%s%d.Abstraction %s%s\n' % (indent, self.id, self.var_name, mark)
 		#result = '%sAbstraction %s%s .parent=%s\n' % (indent, self.var_name, mark, self.parent)
 		result += self.children[0].str_tree(node_hl, depth+1)
 		return result

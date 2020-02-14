@@ -3,11 +3,12 @@
 import copy
 from node import ApplicationNode, AbstractionNode, VariableNode
 from parser import parse_expr as ps
-from engine import reduce_, equals, assign_macro
+from engine import reduce_, equals, assign_macro, debug_set
 
 # alpha equivalence
 assign_macro('TRUE', '\\x[\\y[x]]')
 assign_macro('FALSE', '\\x[\\y[y]]')
+
 assert equals('TRUE', '\\foo[\\bar[foo]]')
 assert equals('FALSE', '\\foo[\\bar[bar]]')
 
@@ -26,6 +27,7 @@ assert equals(reduce_('(RET_TRUE foo)'), 'TRUE')
 assert equals(reduce_('(RET_TRUE bar)'), 'TRUE')
 
 assign_macro('IDENT', '\\x[x]')
+debug_set()
 assert equals(reduce_('(IDENT foo)'), 'foo')
 assert equals(reduce_('(IDENT TRUE)'), 'TRUE')
 assert equals(reduce_('(IDENT FALSE)'), 'FALSE')
@@ -34,6 +36,8 @@ assign_macro('OR', '\\x[((x RET_TRUE) IDENT)]')
 assert equals(reduce_('((OR TRUE) DUMMY)'), 'TRUE')
 assert equals(reduce_('((OR FALSE) FALSE)'), 'FALSE')
 assert equals(reduce_('(OR FALSE)'), 'IDENT')
+
+print('tests passed')
 
 # from https://github.com/andrejbauer/plzoo
 #

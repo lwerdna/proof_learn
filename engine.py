@@ -8,6 +8,16 @@ from parser import parse_expr
 
 macros = {}
 
+DEBUG = False
+
+def debug_set():
+	global DEBUG
+	DEBUG = True
+
+def debug_clear():
+	global DEBUG
+	DEBUG = False
+
 def get_all_nodes(tree):
 	result = []
 	queue = [tree]
@@ -23,8 +33,6 @@ def get_all_nodes(tree):
 # should be called MULTIPLE times: after parsing, and after B-reduction,
 # since depths will change
 def decorate(ast):
-	print(ast.str_tree())
-
 	curid = 0
 	depth = 0
 	queue = [ast]
@@ -47,12 +55,9 @@ def decorate(ast):
 # should be called ONCE after parsing, depth decorating
 # (the bindings shouldn't change even during B-reduction)
 def decorate_bindings(ast):
-	nodes = get_all_nodes(ast)
-	abstractions = [x for x in nodes if isinstance(x, AbstractionNode)]
-	variables = [x for x in nodes if isinstance(x, VariableNode)]
-	for anode in abstractions:
-		for vnode in [x for x in variables if x.depth > anode.depth and x.name == anode.var_name]:
-			anode.bindings.append(vnode)
+	for anode in filter(lambda x: isinstance(x, AbstractionNode), get_all_nodes(ast)):
+		for vnode in filter(lambda x: isinstance(x, VariableNode) and x.name==anode.var_name, anode.descendents()):
+			vnode.binding = anode
 
 def substitute_macros(ast):
 	global macros
@@ -80,8 +85,8 @@ def to_tree(expr:str):
 def assign_macro(name:str, expr:str):
 	global macros
 	macros[name] = to_tree(expr)
-	print('assigned %s to:' % name)
-	print(macros[name].str_tree())
+	#print('assigned %s to:' % name)
+	#print(macros[name].str_tree())
 
 # if reducible -> return the ApplicationNode that will be the target of the next reduce step
 #         else -> return None
@@ -126,7 +131,7 @@ def reduce_step(term, target=None):
 	# replace all bound variables
 	#print('changing bindings: ', abst.bindings)
 	#print('changing bindings: ', list(map(str, abst.bindings)))
-	for var in abst.bindings:
+	for var in filter(lambda x: isinstance(x, VariableNode) and x.binding is abst, abst.descendents()):
 		var.parent.update_children(var, copy.deepcopy(val))
 
 	body = abst.children[0] # important! body could have been a replaced variable
@@ -144,7 +149,6 @@ def reduce_step(term, target=None):
 	decorate(result)
 	return result
 
-DEBUG = True
 def reduce_(term:str, target=None):
 	term = to_tree(term)
 
@@ -158,8 +162,6 @@ def reduce_(term:str, target=None):
 		target = reducible(term)
 
 	if DEBUG:
-		if DEBUG: print('----')
-		print('returning reduced:')
 		print(term.str_tree())
 
 	return term
