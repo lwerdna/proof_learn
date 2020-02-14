@@ -51,21 +51,22 @@ def decorate(ast):
 		depth += 1
 
 # have each AbstractionNode point to all its bound VariableNodes
-# assumes the given ast has had its depths decorated
+# WARNING! assumes the given ast has had its depths decorated
 #
 # should be called ONCE after parsing, depth decorating
 # (the bindings shouldn't change even during B-reduction)
 def decorate_bindings(ast):
+	global DEBUG
 	for anode in filter(lambda x: isinstance(x, AbstractionNode), get_all_nodes(ast)):
 		for vnode in filter(lambda x: isinstance(x, VariableNode) and x.name==anode.var_name, anode.descendents()):
-			vnode.binding = anode
+			vnode.binding = vnode.depth - anode.depth
 
 def substitute_macros(ast):
 	global macros
 	result = ast
 	for var in [x for x in get_all_nodes(ast) if isinstance(x, VariableNode)]:
 		if var.name in macros:
-			new = copy.deepcopy(macros[var.name])
+			new = macros[var.name].clone()
 			if not var.parent:
 				result = new
 			else:
@@ -100,6 +101,7 @@ def reducible(term):
 	return nodes[0]
 
 # reduce a term, single-step style
+# WARNING! assumes depth and binding decoration is current
 def reduce_step(term, target=None):
 	if not target:
 		target = reducible(term)
@@ -113,31 +115,40 @@ def reduce_step(term, target=None):
 	#  abst  val
 	#   |
 	#  body
+	#   |
+	#  ...
+	#   |
+	#  var
 	#
 	appl = target
 	val = appl.children[1] 
 	abst = appl.children[0]
-	body = abst.children[0]
-
-	#assert not (abst is val)
-	#print('appl: %s' % appl)
-	#print('val: %s' % val)
-	#print('abst: %s' % abst)
-	#print('body: %s' % body)
-	#assert not (body is val)
-
-	assert isinstance(appl, ApplicationNode)
-	assert isinstance(abst, AbstractionNode)
 
 	# replace all bound variables
-	#print('changing bindings: ', abst.bindings)
-	#print('changing bindings: ', list(map(str, abst.bindings)))
-	for var in filter(lambda x: isinstance(x, VariableNode) and x.binding is abst, abst.descendents()):
-		var.parent.update_children(var, copy.deepcopy(val))
+	for var in filter(lambda x: isinstance(x, VariableNode), abst.descendents()):
+		if (var.depth - abst.depth) == var.binding:
+			#print('SUBBING!')
+			substitute = val.clone()
+			#print(substitute.str_tree())
 
-	body = abst.children[0] # important! body could have been a replaced variable
+			# if any variable in the val had bindings above appl, they need
+			# to be adjusted since their depth changes
+			subtree = [substitute] + substitute.descendents()
+			for tmp in filter(lambda x: isinstance(x, VariableNode), subtree):
+				#print('considering %s' % tmp)
+				if not (tmp.binding and (tmp.depth - tmp.binding) < appl.depth):
+					continue
+				#input()
+				rdepth = tmp.depth - appl.depth
+				ldepth = var.depth - appl.depth
+				tmp.binding = tmp.binding + (ldepth - rdepth) - 2
+				#print('rebinded to %d' % tmp.binding)
+
+			substitute.parent = var.parent
+			var.parent.update_children(var, substitute)
 
 	# replace link to appl with links to body
+	body = abst.children[0] # important! body could have been a replaced variable
 	if not appl.parent:
 		result = body
 		body.parent = None
@@ -147,6 +158,7 @@ def reduce_step(term, target=None):
 		result = term
 
 	# depths have changed, update
+	assert result.parent == None
 	decorate(result)
 	return result
 
@@ -156,14 +168,23 @@ def reduce_(term:str, target=None):
 	if not target:
 		target = reducible(term)
 
+	step = 0
 	while target:
-		if DEBUG: print(term.str_tree(target))
+		if DEBUG:
+			#print(term.str_tree(target))
+			draw_graphviz(term, target, '/tmp/tmp%04d.png' % step)
+			step += 1
 		term = reduce_step(term, target)
-		if DEBUG: print('----')
+		if DEBUG:
+			#print('----')
+			draw_graphviz(term, None, '/tmp/tmp%04d.png' % step)
+			step += 1
 		target = reducible(term)
 
 	if DEBUG:
-		print(term.str_tree())
+		#print(term.str_tree())
+		draw_graphviz(term, None, '/tmp/tmp%04d.png' % step)
+		step += 1
 
 	return term
 
@@ -174,13 +195,18 @@ def equals(a, b):
 		b = to_tree(b)
 	return a == b
 
-def draw_graphviz(term:str, fname=None):
-	term = to_tree(term)
+def draw_graphviz(term, hlnode=None, fname=None):
+	if type(term) == str:
+		term = to_tree(term)
+
+	#print('gonna draw: ')
+	#print(term.str_tree())
 
 	dot = 'digraph g {\n'
+	dot += '\tgraph [ordering="out"];'
 	
 	def node2mark(node):
-		if isinstance(node, VariableNode): return node.name
+		if isinstance(node, VariableNode): return '%s bind=%d' % (node.name, node.binding)
 		elif isinstance(node, AbstractionNode): return '&lambda;.%s' % node.var_name
 		else: return '@'
 
@@ -188,20 +214,33 @@ def draw_graphviz(term:str, fname=None):
 
 	# labels
 	for node in nodes:
-		dot += '\t"obj_%d" [ label = "%s" ];\n' % (id(node), node2mark(node))
+		color = ' color="red"' if node is hlnode else ''
+		dot += '\t"obj_%d" [ label = "%s"%s];\n' % (id(node), node2mark(node), color)
 
-	# parent-child edges
+	# parent -> child edges
 	for node in nodes:
 		src = 'obj_%d' % id(node)
 		for child in node.children:
 			dst = 'obj_%d' % id(child)
 			dot += '\t"%s" -> "%s";\n' % (src, dst)
 
+	# child -> parent edges
+	for node in nodes:
+		if not node.parent: continue
+		src = 'obj_%d' % id(node)
+		dst = 'obj_%d' % id(node.parent)
+		dot += '\t"%s" -> "%s" [color="red"];\n' % (src, dst)
+
 	# variable -> abstraction bindings
 	for node in filter(lambda x: isinstance(x, VariableNode) and x.binding, nodes):
 		src = 'obj_%d' % id(node)
-		dst = 'obj_%d' % id(node.binding)
-		dot += '%s -> %s [style=dashed, color=grey]' % (src, dst)
+
+		abstr = node
+		for i in range(node.binding):
+			abstr = abstr.parent
+
+		dst = 'obj_%d' % id(abstr)
+		dot += '\t"%s" -> "%s" [style=dashed, color="grey"]' % (src, dst)
 
 	dot += '}\n'
 
@@ -210,7 +249,7 @@ def draw_graphviz(term:str, fname=None):
 
 	if not fname:
 		fname = '/tmp/tmp.png'
+	print('writing %s' % fname)
 	os.system('dot /tmp/tmp.dot -Tpng -o' + fname)
-	os.system('open /tmp/tmp.png')
 
 	

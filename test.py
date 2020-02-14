@@ -6,6 +6,10 @@ from node import ApplicationNode, AbstractionNode, VariableNode
 from parser import parse_expr as ps
 from engine import reduce_, equals, assign_macro, debug_set, draw_graphviz
 
+#debug_set()
+#reduce_('\\x[(\\y[y] x)]')
+#sys.exit(0)
+
 # alpha equivalence
 assign_macro('TRUE', '\\x[\\y[x]]')
 assign_macro('FALSE', '\\x[\\y[y]]')
@@ -44,12 +48,7 @@ assert equals(reduce_('(IDENT FALSE)'), 'FALSE')
 
 #assign_macro('OR', '\\x[((x RET_TRUE) IDENT)]')
 assign_macro('OR', '\\x[\\y[(((IF x) TRUE) y)]]')
-debug_set()
-reduce_('OR')
-draw_graphviz('((OR TRUE) DUMMY)')
-sys.exit(0)
 assert equals(reduce_('((OR TRUE) DUMMY)'), 'TRUE')
-input()
 assert equals(reduce_('((OR FALSE) FALSE)'), 'FALSE')
 assert equals(reduce_('(OR FALSE)'), 'IDENT')
 
@@ -57,8 +56,8 @@ assign_macro('AND', '\\x[((x IDENT) RET_FALSE)]')
 assert equals(reduce_('((AND TRUE) TRUE)'), 'TRUE')
 assert equals(reduce_('((AND TRUE) FALSE)'), 'FALSE')
 assert equals(reduce_('((AND FALSE) TRUE)'), 'FALSE')
+#debug_set()
 assert equals(reduce_('((AND FALSE) FALSE)'), 'FALSE')
-
 print('tests passed')
 
 # from https://github.com/andrejbauer/plzoo
