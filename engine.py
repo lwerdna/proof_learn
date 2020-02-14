@@ -2,6 +2,7 @@
 #
 # interact with the lambda term to do reductions, etc.
 
+import os
 import copy
 from node import ApplicationNode, AbstractionNode, VariableNode
 from parser import parse_expr
@@ -105,7 +106,7 @@ def reduce_step(term, target=None):
 	if not target:
 		return term
 
-	# substitute all variables bound by abst with val:
+	# substitute all variables bound by abst in body with val:
 	#
 	#    appl
 	#    /  \
@@ -172,3 +173,44 @@ def equals(a, b):
 	if type(b) == str:
 		b = to_tree(b)
 	return a == b
+
+def draw_graphviz(term:str, fname=None):
+	term = to_tree(term)
+
+	dot = 'digraph g {\n'
+	
+	def node2mark(node):
+		if isinstance(node, VariableNode): return node.name
+		elif isinstance(node, AbstractionNode): return '&lambda;.%s' % node.var_name
+		else: return '@'
+
+	nodes = get_all_nodes(term)
+
+	# labels
+	for node in nodes:
+		dot += '\t"obj_%d" [ label = "%s" ];\n' % (id(node), node2mark(node))
+
+	# parent-child edges
+	for node in nodes:
+		src = 'obj_%d' % id(node)
+		for child in node.children:
+			dst = 'obj_%d' % id(child)
+			dot += '\t"%s" -> "%s";\n' % (src, dst)
+
+	# variable -> abstraction bindings
+	for node in filter(lambda x: isinstance(x, VariableNode) and x.binding, nodes):
+		src = 'obj_%d' % id(node)
+		dst = 'obj_%d' % id(node.binding)
+		dot += '%s -> %s [style=dashed, color=grey]' % (src, dst)
+
+	dot += '}\n'
+
+	with open('/tmp/tmp.dot', 'w') as fp:
+		fp.write(dot)
+
+	if not fname:
+		fname = '/tmp/tmp.png'
+	os.system('dot /tmp/tmp.dot -Tpng -o' + fname)
+	os.system('open /tmp/tmp.png')
+
+	
