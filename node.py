@@ -48,6 +48,9 @@ class TermNode:
 	def __ne__(self, other):
 		return not (self == other)
 
+	def __hash__(self):
+		return id(self)
+
 class VariableNode(TermNode):
 	def __init__(self, name):
 		super().__init__()
@@ -55,7 +58,7 @@ class VariableNode(TermNode):
 		self.name = name
 
 		# decorated after parsing
-		self.binding = 0 # number of ancestors to reach binding Abstraction
+		self.binding = None # abstraction node
 
 	def var_subst(self, name, term):
 		if self.name == name:
@@ -65,20 +68,14 @@ class VariableNode(TermNode):
 	def __str__(self):
 		result = '%d.%s' % (self.id, self.name)
 		if self.binding:
-			result += ' bound:%d' % self.binding
+			result += ' bound:%d' % self.binding.id
 		return result
 
 	def str_tree(self, node_hl=None, depth=0):
 		indent = '  ' * depth
 		mark = ' <--' if self is node_hl else ''
-		return '%s%d.Variable "%s"%s%s' % (indent, self.id, self.name, ' bound=%d'%self.binding if self.binding else '', mark)
+		return '%s%d.Variable "%s"%s%s' % (indent, self.id, self.name, ' bound=%d'%self.binding.id if self.binding else '', mark)
 		#return '%sVariable "%s"%s .parent=%s' % (indent, self.name, mark, self.parent)
-
-	def clone(self):
-		result = VariableNode(self.name)
-		result.binding = self.binding
-		result.depth = self.depth
-		return result
 
 class AbstractionNode(TermNode):
 	def __init__(self, var_name, term):
@@ -101,13 +98,6 @@ class AbstractionNode(TermNode):
 		result += self.children[0].str_tree(node_hl, depth+1)
 		return result
 
-	def clone(self):
-		child = self.children[0].clone()
-		result = AbstractionNode(self.var_name, child)
-		result.depth = self.depth
-		child.parent = result
-		return result
-
 class ApplicationNode(TermNode):
 	def __init__(self, left, right):
 		super().__init__()
@@ -127,11 +117,3 @@ class ApplicationNode(TermNode):
 		result += self.children[1].str_tree(node_hl, depth+1)
 		return result
 
-	def clone(self):
-		a = self.children[0].clone()
-		b = self.children[1].clone()
-		result = ApplicationNode(a, b)
-		result.depth = self.depth
-		a.parent = result
-		b.parent = result
-		return result

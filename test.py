@@ -4,7 +4,7 @@ import sys
 import copy
 from node import ApplicationNode, AbstractionNode, VariableNode
 from parser import parse_expr as ps
-from engine import reduce_, equals, assign_macro, debug_set, draw_graphviz
+from engine import reduce_, equals, assign_macro, debug_set, draw_graphviz, to_tree, clone_tree
 
 #debug_set()
 #reduce_('\\x[(\\y[y] x)]')
@@ -26,7 +26,7 @@ assign_macro('ITE', '\\cond[\\a[\\b[((cond a) b)]]]')
 assert equals(reduce_('(ITE FALSE)'), 'FALSE')
 assert equals(reduce_('(ITE TRUE)'), 'TRUE')
 
-# K from SKI returns a function that always returns the given argument
+# K combinator from SKI returns a function that always returns the given argument
 assign_macro('K', '\\x[\\y[x]]')
 assign_macro('RET_TRUE', '(K TRUE)')
 assign_macro('RET_FALSE', '(K FALSE)')
@@ -48,15 +48,16 @@ assert equals(reduce_('(IDENT FALSE)'), 'FALSE')
 
 #assign_macro('OR', '\\x[((x RET_TRUE) IDENT)]')
 assign_macro('OR', '\\x[\\y[(((IF x) TRUE) y)]]')
-assert equals(reduce_('((OR TRUE) DUMMY)'), 'TRUE')
+assert equals(reduce_('((OR TRUE) TRUE)'), 'TRUE')
+assert equals(reduce_('((OR TRUE) FALSE)'), 'TRUE')
+assert equals(reduce_('((OR FALSE) TRUE)'), 'TRUE')
 assert equals(reduce_('((OR FALSE) FALSE)'), 'FALSE')
-assert equals(reduce_('(OR FALSE)'), 'IDENT')
 
-assign_macro('AND', '\\x[((x IDENT) RET_FALSE)]')
+#assign_macro('AND', '\\x[((x IDENT) RET_FALSE)]')
+assign_macro('AND', '\\x[\\y[(((IF x) y) FALSE)]]')
 assert equals(reduce_('((AND TRUE) TRUE)'), 'TRUE')
 assert equals(reduce_('((AND TRUE) FALSE)'), 'FALSE')
 assert equals(reduce_('((AND FALSE) TRUE)'), 'FALSE')
-#debug_set()
 assert equals(reduce_('((AND FALSE) FALSE)'), 'FALSE')
 print('tests passed')
 

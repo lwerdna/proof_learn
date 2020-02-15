@@ -31,6 +31,42 @@ def get_all_nodes(tree):
 
 	return result
 
+def clone_tree(tree):
+	nodes = get_all_nodes(tree)
+	nodes2new = {}
+
+	# create old->new mapping
+	for node in nodes:
+		new = None
+		if isinstance(node, VariableNode):
+			new = VariableNode(node.name)
+		elif isinstance(node, AbstractionNode):
+			new = AbstractionNode(node.var_name, None)
+		elif isinstance(node, ApplicationNode):
+			new = ApplicationNode(None, None)
+		else:
+			assert False
+		nodes2new[node] = new
+
+	# remap children, binding references
+	for (old, new) in nodes2new.items():
+		new.parent = nodes2new.get(old.parent)
+		new.depth = old.depth
+
+		if new.degree > 0:
+			new.children[0] = nodes2new[old.children[0]]
+		if new.degree > 1:
+			new.children[1] = nodes2new[old.children[1]]
+
+		if isinstance(old, VariableNode):
+			if old.binding in nodes2new:
+				new.binding = nodes2new[old.binding]
+			else:
+				# this points up above the subtree where the clone started
+				new.binding = old.binding
+
+	return nodes2new[tree]
+
 # should be called MULTIPLE times: after parsing, and after B-reduction,
 # since depths will change
 def decorate(ast):
@@ -59,14 +95,14 @@ def decorate_bindings(ast):
 	global DEBUG
 	for anode in filter(lambda x: isinstance(x, AbstractionNode), get_all_nodes(ast)):
 		for vnode in filter(lambda x: isinstance(x, VariableNode) and x.name==anode.var_name, anode.descendents()):
-			vnode.binding = vnode.depth - anode.depth
+			vnode.binding = anode
 
 def substitute_macros(ast):
 	global macros
 	result = ast
 	for var in [x for x in get_all_nodes(ast) if isinstance(x, VariableNode)]:
 		if var.name in macros:
-			new = macros[var.name].clone()
+			new = clone_tree(macros[var.name])
 			if not var.parent:
 				result = new
 			else:
@@ -124,26 +160,14 @@ def reduce_step(term, target=None):
 	val = appl.children[1] 
 	abst = appl.children[0]
 
+	#print('appl: ', appl)
+	#print('val: ', val)
+	#print('abst: ', abst)
+
 	# replace all bound variables
-	for var in filter(lambda x: isinstance(x, VariableNode), abst.descendents()):
-		if (var.depth - abst.depth) == var.binding:
-			#print('SUBBING!')
-			substitute = val.clone()
-			#print(substitute.str_tree())
-
-			# if any variable in the val had bindings above appl, they need
-			# to be adjusted since their depth changes
-			subtree = [substitute] + substitute.descendents()
-			for tmp in filter(lambda x: isinstance(x, VariableNode), subtree):
-				#print('considering %s' % tmp)
-				if not (tmp.binding and (tmp.depth - tmp.binding) < appl.depth):
-					continue
-				#input()
-				rdepth = tmp.depth - appl.depth
-				ldepth = var.depth - appl.depth
-				tmp.binding = tmp.binding + (ldepth - rdepth) - 2
-				#print('rebinded to %d' % tmp.binding)
-
+	for var in filter(lambda x: isinstance(x, VariableNode) and x.binding, abst.descendents()):
+		if var.binding == abst:
+			substitute = clone_tree(val)
 			substitute.parent = var.parent
 			var.parent.update_children(var, substitute)
 
@@ -206,7 +230,7 @@ def draw_graphviz(term, hlnode=None, fname=None):
 	dot += '\tgraph [ordering="out"];'
 	
 	def node2mark(node):
-		if isinstance(node, VariableNode): return '%s bind=%d' % (node.name, node.binding)
+		if isinstance(node, VariableNode): return '%s' % (node.name)
 		elif isinstance(node, AbstractionNode): return '&lambda;.%s' % node.var_name
 		else: return '@'
 
@@ -234,12 +258,7 @@ def draw_graphviz(term, hlnode=None, fname=None):
 	# variable -> abstraction bindings
 	for node in filter(lambda x: isinstance(x, VariableNode) and x.binding, nodes):
 		src = 'obj_%d' % id(node)
-
-		abstr = node
-		for i in range(node.binding):
-			abstr = abstr.parent
-
-		dst = 'obj_%d' % id(abstr)
+		dst = 'obj_%d' % id(node.binding)
 		dot += '\t"%s" -> "%s" [style=dashed, color="grey"]' % (src, dst)
 
 	dot += '}\n'
