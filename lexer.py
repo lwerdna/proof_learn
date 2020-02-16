@@ -54,6 +54,7 @@ def tokenize(line):
 	tokens = []
 	line = line.rstrip()
 	chars = list(line)
+	varchars = list('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_')
 
 	i = 0
 	while i < len(chars):
@@ -67,9 +68,9 @@ def tokenize(line):
 		elif c == '.':
 			tokens.append((TID.DOT, '.'))
 			i += 1
-		elif c.isidentifier():
+		elif c in varchars:
 			value = ''
-			while i<len(chars) and chars[i].isidentifier():
+			while i<len(chars) and chars[i] in varchars:
 				value += chars[i]
 				i += 1
 			tokens.append((TID.VARIABLE, value))

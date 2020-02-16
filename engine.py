@@ -239,7 +239,8 @@ def draw_graphviz(term, hlnode=None, fname=None):
 	# labels
 	for node in nodes:
 		color = ' color="red"' if node is hlnode else ''
-		dot += '\t"obj_%d" [ label = "%s"%s];\n' % (id(node), node2mark(node), color)
+		shape = ' shape="box"' if isinstance(node, VariableNode) else ''
+		dot += '\t"obj_%d" [ label = "%s"%s%s];\n' % (id(node), node2mark(node), shape, color)
 
 	# parent -> child edges
 	for node in nodes:
@@ -249,11 +250,11 @@ def draw_graphviz(term, hlnode=None, fname=None):
 			dot += '\t"%s" -> "%s";\n' % (src, dst)
 
 	# child -> parent edges
-	for node in nodes:
-		if not node.parent: continue
-		src = 'obj_%d' % id(node)
-		dst = 'obj_%d' % id(node.parent)
-		dot += '\t"%s" -> "%s" [color="red"];\n' % (src, dst)
+	#for node in nodes:
+	#	if not node.parent: continue
+	#	src = 'obj_%d' % id(node)
+	#	dst = 'obj_%d' % id(node.parent)
+	#	dot += '\t"%s" -> "%s" [color="red"];\n' % (src, dst)
 
 	# variable -> abstraction bindings
 	for node in filter(lambda x: isinstance(x, VariableNode) and x.binding, nodes):

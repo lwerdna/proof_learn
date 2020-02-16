@@ -59,6 +59,35 @@ assert equals(reduce_('((AND TRUE) TRUE)'), 'TRUE')
 assert equals(reduce_('((AND TRUE) FALSE)'), 'FALSE')
 assert equals(reduce_('((AND FALSE) TRUE)'), 'FALSE')
 assert equals(reduce_('((AND FALSE) FALSE)'), 'FALSE')
+
+assign_macro('NOT', '\\x[(((IF x) FALSE) TRUE)]')
+assert equals(reduce_('(NOT TRUE)'), 'FALSE')
+assert equals(reduce_('(NOT FALSE)'), 'TRUE')
+
+# number n is a 2-param func that applies the first param n times to the 2nd
+assign_macro('0', '\\f[\\x[x]]')
+assign_macro('1', '\\f[\\x[(f x)]]')
+assign_macro('2', '\\f[\\x[(f (f x))]]')
+assign_macro('3', '\\f[\\x[(f (f (f x)))]]')
+assign_macro('4', '\\f[\\x[(f (f (f (f x))))]]')
+assign_macro('5', '\\f[\\x[(f (f (f (f (f x)))))]]')
+assign_macro('6', '\\f[\\x[(f (f (f (f (f (f x))))))]]')
+assign_macro('7', '\\f[\\x[(f (f (f (f (f (f (f x)))))))]]')
+assign_macro('8', '\\f[\\x[(f (f (f (f (f (f (f (f x))))))))]]')
+assign_macro('9', '\\f[\\x[(f (f (f (f (f (f (f (f (f x)))))))))]]')
+assign_macro('10', '\\f[\\x[(f (f (f (f (f (f (f (f (f (f x))))))))))]]')
+
+assign_macro('SUCC', '\\n[\\f[\\x[(f ((n f) x))]]]')
+
+assert equals(reduce_('(SUCC 0)'), '1')
+assert equals(reduce_('(SUCC 2)'), '3')
+assert equals(reduce_('(SUCC 4)'), '5')
+assert equals(reduce_('(SUCC 8)'), '9')
+assert equals(reduce_('(SUCC (SUCC (SUCC (SUCC (SUCC 0)))))'), '5')
+
+#assign_macro('Y', '\\f[( \\x[(f (x x))] \\x[(f (x x))] )]')
+
+
 print('tests passed')
 
 # from https://github.com/andrejbauer/plzoo
@@ -67,19 +96,7 @@ print('tests passed')
 #first := ^ p . p (^x y . x) ;
 #second := ^ p . p (^x y. y) ;
 #
-#-- The constant function
-#
-#K := ^ x y . x ;
-#
-#-- Booleans
-#
-#true  := ^x y . x ;
-#false := ^x y . y ;
-#if := ^u . u ;
-#
-#and := ^x y . if x y false ;
-#or  := ^x y . if x true y ;
-#not := ^x . if x false true ;
+
 #
 #-- Recursive definitions
 #
