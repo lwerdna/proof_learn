@@ -66,10 +66,7 @@ class VariableNode(TermNode):
 		return self
 
 	def __str__(self):
-		result = '%d.%s' % (self.id, self.name)
-		if self.binding:
-			result += ' bound:%d' % self.binding.id
-		return result
+		return self.name
 
 	def str_tree(self, node_hl=None, depth=0):
 		indent = '  ' * depth

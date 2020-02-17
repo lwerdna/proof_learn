@@ -238,7 +238,7 @@ def draw_graphviz(term, hlnode=None, fname=None):
 
 	# labels
 	for node in nodes:
-		color = ' color="red"' if node is hlnode else ''
+		color = ' fillcolor="red" style="filled"' if node is hlnode else ''
 		shape = ' shape="box"' if isinstance(node, VariableNode) else ''
 		dot += '\t"obj_%d" [ label = "%s"%s%s];\n' % (id(node), node2mark(node), shape, color)
 

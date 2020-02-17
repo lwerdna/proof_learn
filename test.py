@@ -6,10 +6,6 @@ from node import ApplicationNode, AbstractionNode, VariableNode
 from parser import parse_expr as ps
 from engine import reduce_, equals, assign_macro, debug_set, draw_graphviz, to_tree, clone_tree
 
-#debug_set()
-#reduce_('\\x[(\\y[y] x)]')
-#sys.exit(0)
-
 # alpha equivalence
 assign_macro('TRUE', '\\x[\\y[x]]')
 assign_macro('FALSE', '\\x[\\y[y]]')
@@ -85,8 +81,39 @@ assert equals(reduce_('(SUCC 4)'), '5')
 assert equals(reduce_('(SUCC 8)'), '9')
 assert equals(reduce_('(SUCC (SUCC (SUCC (SUCC (SUCC 0)))))'), '5')
 
-#assign_macro('Y', '\\f[( \\x[(f (x x))] \\x[(f (x x))] )]')
+assign_macro('PLUS', '\\n[\\m[\\f[\\x[((n f) ((m f) x))]]]]')
+assert equals(reduce_('((PLUS 0) 0)'), '0')
+assert equals(reduce_('((PLUS 0) 1)'), '1')
+assert equals(reduce_('((PLUS 1) 1)'), '2')
+assert equals(reduce_('((PLUS 2) 2)'), '4')
+assert equals(reduce_('((PLUS 4) 3)'), '7')
 
+assign_macro('MULT', '\\n[\\m[\\f[\\x[((n (m f)) x)]]]]')
+assert equals(reduce_('((MULT 3) 0)'), '0')
+assert equals(reduce_('((MULT 3) 2)'), '6')
+assert equals(reduce_('((MULT 3) 3)'), '9')
+assert equals(reduce_('((MULT 6) 3)'), reduce_('((PLUS 9) 9)'))
+assign_macro('27', str(reduce_('((PLUS ((PLUS 9) 9)) 9)')))
+assign_macro('36', str(reduce_('((PLUS ((PLUS ((PLUS 9) 9)) 9)) 9)')))
+assert equals(reduce_('((MULT 6) 6)'), '36')
+
+assign_macro('EXP', '\\n[\\m[(m n)]]')
+#assert equals(reduce_('((EXP 2) 0)'), '1') # wouldn't this be nice if it worked
+assert equals(reduce_('((EXP 0) 2)'), '0')
+assert equals(reduce_('((EXP 2) 2)'), '4')
+assert equals(reduce_('((EXP 2) 3)'), '8')
+assert equals(reduce_('((EXP 3) 3)'), '27')
+
+assign_macro('ISZERO', '\\n[((n (K FALSE)) TRUE)]')
+assert equals(reduce_('(ISZERO 0)'), 'TRUE')
+assert equals(reduce_('(ISZERO 1)'), 'FALSE')
+assert equals(reduce_('(ISZERO 2)'), 'FALSE')
+assert equals(reduce_('(ISZERO 3)'), 'FALSE')
+
+#pred := ^n . second (n (^p. pair (succ (first p)) (first p)) (pair 0 0)) ;
+#
+
+#assign_macro('Y', '\\f[( \\x[(f (x x))] \\x[(f (x x))] )]')
 
 print('tests passed')
 
@@ -122,29 +149,6 @@ print('tests passed')
 #
 #-- Numbers
 #
-#0  := ^f x . x ;
-#1  := ^f x . f x ;
-#2  := ^f x . f (f x) ;
-#3  := ^f x . f (f (f x)) ;
-#4  := ^f x . f (f (f (f x))) ;
-#5  := ^f x . f (f (f (f (f x)))) ;
-#6  := ^f x . f (f (f (f (f (f x))))) ;
-#7  := ^f x . f (f (f (f (f (f (f x)))))) ;
-#8  := ^f x . f (f (f (f (f (f (f (f x))))))) ;
-#9  := ^f x . f (f (f (f (f (f (f (f (f x)))))))) ;
-#10 := ^f x . f (f (f (f (f (f (f (f (f (f x))))))))) ;
-#
-#succ := ^n f x . f (n f x) ;
-#
-#+ := ^n m f x . (n f) ((m f) x) ;
-#
-#* := ^n m f x . (n (m f)) x ;
-#
-#** := ^n m . m n ;
-#
-#iszero := ^n . (n (K false)) true ;
-#
-#pred := ^n . second (n (^p. pair (succ (first p)) (first p)) (pair 0 0)) ;
 #
 #== := fix (^== n m . if (iszero n) (iszero m) (== (pred n) (pred m))) ;
 #
