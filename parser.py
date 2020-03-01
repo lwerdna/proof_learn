@@ -11,6 +11,9 @@
 from lexer import TID, tokenize
 from node import AbstractionNode, ApplicationNode, VariableNode
 
+class ParserException(Exception):
+	pass
+
 def parse_term(mgr):
 	#print('parse_term(...\'%s\')' % mgr.str_line())
 
@@ -23,7 +26,7 @@ def parse_term(mgr):
 	elif type_cur == TID.LPAREN:
 		return parse_application(mgr)
 	else:
-		raise Exception('error at: %s' % type_cur)
+		raise ParserException('error at: %s' % type_cur)
 
 def parse_variable(mgr):
 	#print('parse_variable(...\'%s\')' % mgr.str_line())
@@ -58,7 +61,7 @@ def parse_application(mgr):
 def parse(mgr):
 	tree = parse_term(mgr)
 	if not mgr.is_end():
-		raise Exception("parse is done, but tokens remain %s...", mgr.peek())
+		raise ParserException("parse is done, but tokens remain %s...", mgr.peek())
 	return tree
 
 def parse_expr(expr:str):

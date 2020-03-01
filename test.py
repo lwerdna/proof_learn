@@ -4,125 +4,123 @@ import sys
 import copy
 from node import ApplicationNode, AbstractionNode, VariableNode
 from parser import parse_expr as ps
-from engine import reduce_, equals, assign_macro, debug_set, draw_graphviz, to_tree, clone_tree
+from engine import equals, assign_macro, draw_graphviz, to_tree, reduce_step, load_stdlib
 
-# alpha equivalence
-assign_macro('TRUE', '\\x[\\y[x]]')
-assign_macro('FALSE', '\\x[\\y[y]]')
+load_stdlib()
 
-assert equals('TRUE', '\\foo[\\bar[foo]]')
-assert equals('FALSE', '\\foo[\\bar[bar]]')
+# return first or second arg
 
-# do true/false work
-assert equals(reduce_('((TRUE a) b)'), 'a')
-assert equals(reduce_('((FALSE a) b)'), 'b')
-#assert equals(reduce_('((TRUE FALSE) FALSE)'), 'FALSE')
+assert equals('((RETARG0 a) b)', 'a')
+assert equals('((RETARG1 a) b)', 'b')
 
-assign_macro('ITE', '\\cond[\\a[\\b[((cond a) b)]]]')
-assert equals(reduce_('(ITE FALSE)'), 'FALSE')
-assert equals(reduce_('(ITE TRUE)'), 'TRUE')
+# alpha equivalence (variable names don't matter after bindings resolved)
+assert equals('RETARG0', '\\foo[\\bar[foo]]')
+assert equals('RETARG1', '\\foo[\\bar[bar]]')
+
+# boolean stuff
+assert equals('(ITE FALSE)', 'FALSE')
+assert equals('(ITE TRUE)', 'TRUE')
 
 # K combinator from SKI returns a function that always returns the given argument
-assign_macro('K', '\\x[\\y[x]]')
-assign_macro('RET_TRUE', '(K TRUE)')
-assign_macro('RET_FALSE', '(K FALSE)')
-assert equals(reduce_('(RET_TRUE FALSE)'), 'TRUE')
-assert equals(reduce_('(RET_TRUE foo)'), 'TRUE')
-assert equals(reduce_('(RET_TRUE bar)'), 'TRUE')
-assert equals(reduce_('(RET_FALSE FALSE)'), 'FALSE')
-assert equals(reduce_('(RET_FALSE foo)'), 'FALSE')
-assert equals(reduce_('(RET_FALSE bar)'), 'FALSE')
+assert equals('(RET_TRUE FALSE)', 'TRUE')
+assert equals('(RET_TRUE foo)', 'TRUE')
+assert equals('(RET_TRUE bar)', 'TRUE')
+assert equals('(RET_FALSE FALSE)', 'FALSE')
+assert equals('(RET_FALSE foo)', 'FALSE')
+assert equals('(RET_FALSE bar)', 'FALSE')
 
-# since the "action" of if is in the booleans, if is just applying the
-# boolean to the next argument
-assign_macro('IF', '\\x[x]')
+# I combinator from SKI returns given argument, identity
+assert equals('(I foo)', 'foo')
+assert equals('(I TRUE)', 'TRUE')
+assert equals('(I FALSE)', 'FALSE')
 
-assign_macro('IDENT', '\\x[x]')
-assert equals(reduce_('(IDENT foo)'), 'foo')
-assert equals(reduce_('(IDENT TRUE)'), 'TRUE')
-assert equals(reduce_('(IDENT FALSE)'), 'FALSE')
+# if just applies the condition (true or false) to the next two arguments
 
-#assign_macro('OR', '\\x[((x RET_TRUE) IDENT)]')
-assign_macro('OR', '\\x[\\y[(((IF x) TRUE) y)]]')
-assert equals(reduce_('((OR TRUE) TRUE)'), 'TRUE')
-assert equals(reduce_('((OR TRUE) FALSE)'), 'TRUE')
-assert equals(reduce_('((OR FALSE) TRUE)'), 'TRUE')
-assert equals(reduce_('((OR FALSE) FALSE)'), 'FALSE')
+#assign_macro('OR', '\\x[((x RET_TRUE) I)]')
+assert equals('((OR TRUE) TRUE)', 'TRUE')
+assert equals('((OR TRUE) FALSE)', 'TRUE')
+assert equals('((OR FALSE) TRUE)', 'TRUE')
+assert equals('((OR FALSE) FALSE)', 'FALSE')
 
-#assign_macro('AND', '\\x[((x IDENT) RET_FALSE)]')
-assign_macro('AND', '\\x[\\y[(((IF x) y) FALSE)]]')
-assert equals(reduce_('((AND TRUE) TRUE)'), 'TRUE')
-assert equals(reduce_('((AND TRUE) FALSE)'), 'FALSE')
-assert equals(reduce_('((AND FALSE) TRUE)'), 'FALSE')
-assert equals(reduce_('((AND FALSE) FALSE)'), 'FALSE')
+#assign_macro('AND', '\\x[((x I) RET_FALSE)]')
+assert equals('((AND TRUE) TRUE)', 'TRUE')
+assert equals('((AND TRUE) FALSE)', 'FALSE')
+assert equals('((AND FALSE) TRUE)', 'FALSE')
+assert equals('((AND FALSE) FALSE)', 'FALSE')
 
-assign_macro('NOT', '\\x[(((IF x) FALSE) TRUE)]')
-assert equals(reduce_('(NOT TRUE)'), 'FALSE')
-assert equals(reduce_('(NOT FALSE)'), 'TRUE')
+assert equals('(NOT TRUE)', 'FALSE')
+assert equals('(NOT FALSE)', 'TRUE')
 
 # number n is a 2-param func that applies the first param n times to the 2nd
-assign_macro('0', '\\f[\\x[x]]')
-assign_macro('1', '\\f[\\x[(f x)]]')
-assign_macro('2', '\\f[\\x[(f (f x))]]')
-assign_macro('3', '\\f[\\x[(f (f (f x)))]]')
-assign_macro('4', '\\f[\\x[(f (f (f (f x))))]]')
-assign_macro('5', '\\f[\\x[(f (f (f (f (f x)))))]]')
-assign_macro('6', '\\f[\\x[(f (f (f (f (f (f x))))))]]')
-assign_macro('7', '\\f[\\x[(f (f (f (f (f (f (f x)))))))]]')
-assign_macro('8', '\\f[\\x[(f (f (f (f (f (f (f (f x))))))))]]')
-assign_macro('9', '\\f[\\x[(f (f (f (f (f (f (f (f (f x)))))))))]]')
-assign_macro('10', '\\f[\\x[(f (f (f (f (f (f (f (f (f (f x))))))))))]]')
+assert equals('(SUCC 0)', '1')
+assert equals('(SUCC 2)', '3')
+assert equals('(SUCC 4)', '5')
+assert equals('(SUCC 8)', '9')
+assert equals('(SUCC (SUCC (SUCC (SUCC (SUCC 0)))))', '5')
 
-assign_macro('SUCC', '\\n[\\f[\\x[(f ((n f) x))]]]')
+assert equals('((PLUS 0) 0)', '0')
+assert equals('((PLUS 0) 1)', '1')
+assert equals('((PLUS 1) 1)', '2')
+assert equals('((PLUS 2) 2)', '4')
+assert equals('((PLUS 4) 3)', '7')
 
-assert equals(reduce_('(SUCC 0)'), '1')
-assert equals(reduce_('(SUCC 2)'), '3')
-assert equals(reduce_('(SUCC 4)'), '5')
-assert equals(reduce_('(SUCC 8)'), '9')
-assert equals(reduce_('(SUCC (SUCC (SUCC (SUCC (SUCC 0)))))'), '5')
+assert equals('((MULT 3) 0)', '0')
+assert equals('((MULT 3) 2)', '6')
+assert equals('((MULT 3) 3)', '9')
+assert equals('((MULT 6) 3)', '((PLUS 9) 9)')
+assign_macro('27', '((PLUS ((PLUS 9) 9)) 9)')
+assign_macro('36', '((PLUS ((PLUS ((PLUS 9) 9)) 9)) 9)')
+assert equals('((MULT 6) 6)', '36')
 
-assign_macro('PLUS', '\\n[\\m[\\f[\\x[((n f) ((m f) x))]]]]')
-assert equals(reduce_('((PLUS 0) 0)'), '0')
-assert equals(reduce_('((PLUS 0) 1)'), '1')
-assert equals(reduce_('((PLUS 1) 1)'), '2')
-assert equals(reduce_('((PLUS 2) 2)'), '4')
-assert equals(reduce_('((PLUS 4) 3)'), '7')
+#assert equals('((EXP 2) 0)', '1') # wouldn't this be nice if it worked
+assert equals('((EXP 0) 2)', '0')
+assert equals('((EXP 2) 2)', '4')
+assert equals('((EXP 2) 3)', '8')
+assert equals('((EXP 3) 3)', '27')
 
-assign_macro('MULT', '\\n[\\m[\\f[\\x[((n (m f)) x)]]]]')
-assert equals(reduce_('((MULT 3) 0)'), '0')
-assert equals(reduce_('((MULT 3) 2)'), '6')
-assert equals(reduce_('((MULT 3) 3)'), '9')
-assert equals(reduce_('((MULT 6) 3)'), reduce_('((PLUS 9) 9)'))
-assign_macro('27', str(reduce_('((PLUS ((PLUS 9) 9)) 9)')))
-assign_macro('36', str(reduce_('((PLUS ((PLUS ((PLUS 9) 9)) 9)) 9)')))
-assert equals(reduce_('((MULT 6) 6)'), '36')
+assert equals('(ISZERO 0)', 'TRUE')
+assert equals('(ISZERO 1)', 'FALSE')
+assert equals('(ISZERO 2)', 'FALSE')
+assert equals('(ISZERO 3)', 'FALSE')
 
-assign_macro('EXP', '\\n[\\m[(m n)]]')
-#assert equals(reduce_('((EXP 2) 0)'), '1') # wouldn't this be nice if it worked
-assert equals(reduce_('((EXP 0) 2)'), '0')
-assert equals(reduce_('((EXP 2) 2)'), '4')
-assert equals(reduce_('((EXP 2) 3)'), '8')
-assert equals(reduce_('((EXP 3) 3)'), '27')
+# from https://github.com/andrejbauer/plzoo/blob/master/src/lambda/example.lambda
 
-assign_macro('ISZERO', '\\n[((n (K FALSE)) TRUE)]')
-assert equals(reduce_('(ISZERO 0)'), 'TRUE')
-assert equals(reduce_('(ISZERO 1)'), 'FALSE')
-assert equals(reduce_('(ISZERO 2)'), 'FALSE')
-assert equals(reduce_('(ISZERO 3)'), 'FALSE')
+# given items a,b return ((f a) b)
+assign_macro('3_AND_5', '((PAIR 3) 5)')
+assign_macro('5_AND_7', '((PAIR 5) 7)')
+assign_macro('8_AND_9', '((PAIR 8) 9)')
+assert equals('(FIRST 3_AND_5)', '3')
+assert equals('(FIRST 5_AND_7)', '5')
+assert equals('(FIRST 8_AND_9)', '8')
+assert equals('(SECOND 3_AND_5)', '5')
+assert equals('(SECOND 5_AND_7)', '7')
+assert equals('(SECOND 8_AND_9)', '9')
 
-#pred := ^n . second (n (^p. pair (succ (first p)) (first p)) (pair 0 0)) ;
-#
+assert equals('(PRED_F ((PAIR 3) 5))', '((PAIR 5) 6)')
+assert equals('(PRED_F ((PAIR 5) 6))', '((PAIR 6) 7)')
+assert equals('(PRED 9)', '8')
+assert equals('(PRED 5)', '4')
+assert equals('(PRED 1)', '0')
 
 #assign_macro('Y', '\\f[( \\x[(f (x x))] \\x[(f (x x))] )]')
+#draw_graphviz('Y', None, '/tmp/1.png')
+#draw_graphviz(reduce_step('Y'), None, '/tmp/2.png')
+#draw_graphviz(reduce_step(reduce_step('Y')), None, '/tmp/3.png')
+#draw_graphviz(reduce_step(reduce_step(reduce_step('Y'))), None, '/tmp/4.png')
 
+#assign_macro('FOO', '\\f[\\x[((f f) x)]]')
+#draw_graphviz('FOO')
+#sys.exit(-1)
+#assign_macro('BAR', '\\f[\\x[((f f) x)]]')
+#draw_graphviz('BAR')
 print('tests passed')
 
-# from https://github.com/andrejbauer/plzoo
+# reduces with NEITHER strategy
+# (\x[(x x)] \x[(x x)])
+# reduce with NORMAL ORDER strategy, but not APPLICATIVE ORDER strategy
+# (\x[y] (\x[(x x)] \x[(x x)]))
 #
-#pair := ^ a b . ^p . p a b ;
-#first := ^ p . p (^x y . x) ;
-#second := ^ p . p (^x y. y) ;
-#
+# reduces with
 
 #
 #-- Recursive definitions
@@ -148,7 +146,6 @@ print('tests passed')
 #fold := fix (^fold x f l. match l x (^y ys . f y (fold x f ys))) ;
 #
 #-- Numbers
-#
 #
 #== := fix (^== n m . if (iszero n) (iszero m) (== (pred n) (pred m))) ;
 #

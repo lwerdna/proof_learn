@@ -3,7 +3,6 @@
 # every node in the tree is a TermNode, of which three classes derive:
 # AbstractionNode, ApplicationNode, and VariableNode
 
-import re
 import copy
 
 class TermNode:
@@ -14,12 +13,6 @@ class TermNode:
 
 		# these get decorated later, after parsing
 		self.depth = -1	# depth of this node (recalculated after reductions)
-
-	# VariableNode overrides this one, substituting itself
-	def var_subst(self, name, term):
-		for i in range(len(self.children)):
-			self.children[i] = self.children[i].var_subst(name, term)
-		return self
 
 	def update_children(self, old, new):
 		if self.degree > 0 and self.children[0] is old:
@@ -33,17 +26,6 @@ class TermNode:
 			result.append(child)
 			result += child.descendents()
 		return result
-
-	def __eq__(self, other):
-		assert not (other is None) # else None -> 'None' -> 'x'
-		#print('__eq__(\"%s\", \"%s\")' % (self, other))
-		a = str(self)
-		b = str(other)
-		a = re.sub(r'\w+', 'x', a)
-		b = re.sub(r'\w+', 'x', b)
-		#print('left as un-variabled string: %s' % a)
-		#print('right as un-variabled string: %s' % b)
-		return a == b
 
 	def __ne__(self, other):
 		return not (self == other)
@@ -59,11 +41,6 @@ class VariableNode(TermNode):
 
 		# decorated after parsing
 		self.binding = None # abstraction node
-
-	def var_subst(self, name, term):
-		if self.name == name:
-			return copy.deepcopy(term)
-		return self
 
 	def __str__(self):
 		return self.name
