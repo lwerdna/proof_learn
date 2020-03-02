@@ -71,6 +71,7 @@ assert equals('((MULT 6) 3)', '((PLUS 9) 9)')
 assign_macro('27', '((PLUS ((PLUS 9) 9)) 9)')
 assign_macro('36', '((PLUS ((PLUS ((PLUS 9) 9)) 9)) 9)')
 assert equals('((MULT 6) 6)', '36')
+assign_macro('120', '((((MULT 5) 4) 3) 2)')
 
 #assert equals('((EXP 2) 0)', '1') # wouldn't this be nice if it worked
 assert equals('((EXP 0) 2)', '0')
@@ -113,6 +114,8 @@ assert equals('(PRED 1)', '0')
 #sys.exit(-1)
 #assign_macro('BAR', '\\f[\\x[((f f) x)]]')
 #draw_graphviz('BAR')
+assign_macro('FACT', '(Y \\f[\\n[if (iszero n) 1 (* n (f (pred n))))]])'
+
 print('tests passed')
 
 # reduces with NEITHER strategy

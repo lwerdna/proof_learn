@@ -164,6 +164,7 @@ def load_stdlib():
 	assign_macro('SECOND', '\\p[(p RETARG1)]')
 	assign_macro('PRED_F', '\\p[((PAIR (SECOND p)) (SUCC (SECOND p)))]')
 	assign_macro('PRED', '\\n[(FIRST ((n PRED_F) ((PAIR 0) 0)))]')
+	assign_macro('Y', '\\f[( \\x[(f (x x))] \\x[(f (x x))] )]')
 
 # if reducible -> return the ApplicationNode that will be the target of the next reduce step
 #         else -> return None
@@ -243,23 +244,9 @@ def reduce_(term, target=None):
 	if not target:
 		target = reducible(term)
 
-	step = 0
 	while target:
-		if DEBUG:
-			#print(term.str_tree(target))
-			draw_graphviz(term, target, '/tmp/tmp%04d.png' % step)
-			step += 1
 		term = reduce_step(term, target)
-		if DEBUG:
-			#print('----')
-			draw_graphviz(term, None, '/tmp/tmp%04d.png' % step)
-			step += 1
 		target = reducible(term)
-
-	if DEBUG:
-		#print(term.str_tree())
-		draw_graphviz(term, None, '/tmp/tmp%04d.png' % step)
-		step += 1
 
 	return term
 
@@ -282,58 +269,5 @@ def equals(a, b):
 	#print('left as un-variabled string: %s' % a)
 	#print('right as un-variabled string: %s' % b)
 	return a == b
-
-def draw_graphviz(term, hlnode=None, fname=None):
-	if type(term) == str:
-		term = to_tree(term)
-
-	#print('gonna draw: ')
-	#print(term.str_tree())
-
-	dot = 'digraph g {\n'
-	dot += '\tgraph [ordering="out"];'
-
-	def node2mark(node):
-		if isinstance(node, VariableNode): return '%s' % (node.name)
-		elif isinstance(node, AbstractionNode): return '&lambda;.%s' % node.var_name
-		else: return '@'
-
-	nodes = get_all_nodes(term)
-
-	# labels
-	for node in nodes:
-		color = ' fillcolor="red" style="filled"' if node is hlnode else ''
-		shape = ' shape="box"' if isinstance(node, VariableNode) else ''
-		dot += '\t"obj_%d" [ label = "%s"%s%s];\n' % (id(node), node2mark(node), shape, color)
-
-	# parent -> child edges
-	for node in nodes:
-		src = 'obj_%d' % id(node)
-		for child in node.children:
-			dst = 'obj_%d' % id(child)
-			dot += '\t"%s" -> "%s";\n' % (src, dst)
-
-	# child -> parent edges
-	#for node in nodes:
-	#	if not node.parent: continue
-	#	src = 'obj_%d' % id(node)
-	#	dst = 'obj_%d' % id(node.parent)
-	#	dot += '\t"%s" -> "%s" [color="red"];\n' % (src, dst)
-
-	# variable -> abstraction bindings
-	for node in filter(lambda x: isinstance(x, VariableNode) and x.binding, nodes):
-		src = 'obj_%d' % id(node)
-		dst = 'obj_%d' % id(node.binding)
-		dot += '\t"%s" -> "%s" [style=dashed, color="grey"]' % (src, dst)
-
-	dot += '}\n'
-
-	with open('/tmp/tmp.dot', 'w') as fp:
-		fp.write(dot)
-
-	if not fname:
-		fname = '/tmp/tmp.png'
-	print('writing %s' % fname)
-	os.system('dot /tmp/tmp.dot -Tpng -o' + fname)
 
 
