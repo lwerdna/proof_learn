@@ -10,9 +10,8 @@ from engine import VariableNode, AbstractionNode, ApplicationNode
 from parser import ParserException
 
 single_step = True # evaluate and print one reduction step at a time
-single_step_max = 10 # None or 0 means no limit, else stop after
+single_step_max = 32 # None or 0 means no limit, else stop after
 auto_reduce = True # automatically attempt reduction on entered expressions
-sstep_limit = 100
 draw_enabled = True
 
 RED = '\x1B[31m'

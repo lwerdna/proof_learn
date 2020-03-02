@@ -4,7 +4,7 @@ import sys
 import copy
 from node import ApplicationNode, AbstractionNode, VariableNode
 from parser import parse_expr as ps
-from engine import equals, assign_macro, draw_graphviz, to_tree, reduce_step, load_stdlib
+from engine import equals, assign_macro, to_tree, reduce_, reduce_step, load_stdlib
 
 load_stdlib()
 
@@ -14,8 +14,8 @@ assert equals('((RETARG0 a) b)', 'a')
 assert equals('((RETARG1 a) b)', 'b')
 
 # alpha equivalence (variable names don't matter after bindings resolved)
-assert equals('RETARG0', '\\foo[\\bar[foo]]')
-assert equals('RETARG1', '\\foo[\\bar[bar]]')
+assert equals('RETARG0', r'\foo[\bar[foo]]')
+assert equals('RETARG1', r'\foo[\bar[bar]]')
 
 # boolean stuff
 assert equals('(ITE FALSE)', 'FALSE')
@@ -71,7 +71,6 @@ assert equals('((MULT 6) 3)', '((PLUS 9) 9)')
 assign_macro('27', '((PLUS ((PLUS 9) 9)) 9)')
 assign_macro('36', '((PLUS ((PLUS ((PLUS 9) 9)) 9)) 9)')
 assert equals('((MULT 6) 6)', '36')
-assign_macro('120', '((((MULT 5) 4) 3) 2)')
 
 #assert equals('((EXP 2) 0)', '1') # wouldn't this be nice if it worked
 assert equals('((EXP 0) 2)', '0')
@@ -87,6 +86,7 @@ assert equals('(ISZERO 3)', 'FALSE')
 # from https://github.com/andrejbauer/plzoo/blob/master/src/lambda/example.lambda
 
 # given items a,b return ((f a) b)
+print('tuples')
 assign_macro('3_AND_5', '((PAIR 3) 5)')
 assign_macro('5_AND_7', '((PAIR 5) 7)')
 assign_macro('8_AND_9', '((PAIR 8) 9)')
@@ -97,33 +97,29 @@ assert equals('(SECOND 3_AND_5)', '5')
 assert equals('(SECOND 5_AND_7)', '7')
 assert equals('(SECOND 8_AND_9)', '9')
 
+print('predecessor')
 assert equals('(PRED_F ((PAIR 3) 5))', '((PAIR 5) 6)')
 assert equals('(PRED_F ((PAIR 5) 6))', '((PAIR 6) 7)')
 assert equals('(PRED 9)', '8')
 assert equals('(PRED 5)', '4')
 assert equals('(PRED 1)', '0')
 
-#assign_macro('Y', '\\f[( \\x[(f (x x))] \\x[(f (x x))] )]')
-#draw_graphviz('Y', None, '/tmp/1.png')
-#draw_graphviz(reduce_step('Y'), None, '/tmp/2.png')
-#draw_graphviz(reduce_step(reduce_step('Y')), None, '/tmp/3.png')
-#draw_graphviz(reduce_step(reduce_step(reduce_step('Y'))), None, '/tmp/4.png')
+print('triangle()')
+assign_macro('TRIANGLE', r'\f[\n[(((IF (ISZERO n)) 0) ((PLUS n) (f (PRED n))))]]')
+assert equals('((TRIANGLE f) 0)', '0')
+assert equals('((Y TRIANGLE) 2)', '3')
+assert equals('((Y TRIANGLE) 3)', '6')
+assert equals('((Y TRIANGLE) 4)', '10')
 
-#assign_macro('FOO', '\\f[\\x[((f f) x)]]')
-#draw_graphviz('FOO')
-#sys.exit(-1)
-#assign_macro('BAR', '\\f[\\x[((f f) x)]]')
-#draw_graphviz('BAR')
-assign_macro('FACT', '(Y \\f[\\n[if (iszero n) 1 (* n (f (pred n))))]])'
+print('factorial()')
+assign_macro('FACT', r'\f[\n[(((IF (ISZERO n)) 1) ((MULT n) (f (PRED n))))]]')
+assert equals('((FACT f) 0)', '1')
+assert equals('((Y FACT) 2)', '2')
+assert equals('((Y FACT) 3)', '6')
+#assign_macro('120', reduce_('((((MULT 5) 4) 3) 2)'))
+#assert equals('((Y FACT) 5)', '120')
 
 print('tests passed')
-
-# reduces with NEITHER strategy
-# (\x[(x x)] \x[(x x)])
-# reduce with NORMAL ORDER strategy, but not APPLICATIVE ORDER strategy
-# (\x[y] (\x[(x x)] \x[(x x)]))
-#
-# reduces with
 
 #
 #-- Recursive definitions
