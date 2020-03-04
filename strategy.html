@@ -1,0 +1,163 @@
+<html>
+<head>
+<title>Be-Fitched!</title>
+<style>
+ol 
+{
+    counter-reset: item;
+    margin-left: 0;
+    padding-left: 0;
+}
+ol > li 
+{
+    display: block;
+    margin-bottom: .5em;
+    margin-left: 2em;
+}
+ol#goal > li:before 
+{
+    display: inline-block;
+    content: "G" counter(item) ":";
+    counter-increment: item;
+    width: 2em;
+    margin-left: -2em;
+}
+ol#premise > li:before 
+{
+    display: inline-block;
+    content: "P" counter(item) ":";
+    counter-increment: item;
+    width: 2em;
+    margin-left: -2em;
+}
+</style>
+</head>
+
+<body leftmargin='0' topmargin='0' marginwidth='0' marginheight='0' bgcolor='#ffffff'>
+	<center>
+	    <table width='640' cellspacing='0' cellpadding='0' border='0'>
+	    	<tr>
+	        	<td>
+					<br/>
+					<center>
+	  					<span style='font-size:36px'>Introduction to Logic</span>
+					</center>
+					<br/>
+				</td>
+			</tr>
+		<center>
+		<table width='640' cellspacing='0' cellpadding='10' border='1'>
+	    	<tr><td align='center' bgcolor='#eeeeee' style='font-size:24px'>Be-Fitched</td></tr>
+	    	<tr>
+	      		<td>
+					<p style="text-align:justify;">Constructing proofs using the Fitch system can often be hard and unintuitive, especially for those who encounter it for the first time. We have identified the following guidelines which are based on the properties of the <b>Goal</b> or of the <b>Premises</b> that could potentially help you with Fitch-style proofs.</p>
+					<p>Guidelines based on propeties of the <b>Goal</b>:
+						<ol id="goal">
+							<li>
+								<b>Goal</b> is of the form <b>&phi; &rArr; &psi;</b> 
+								<ul>
+									<li>Assume <b>&phi;</b></li>
+									<li>Prove <b>&psi;</b></li>
+									<li>Apply <b>Implication Introduction</b> to prove <b>&phi; &rArr; &psi;</b></li>
+								</ul>
+							</li>
+							<br/>
+							<li>
+								<b>Goal</b> is of the form <b>&not;&phi;</b> 
+								<ul>
+									<li>Assume <b>&phi;</b></li>
+									<li>Find a sentence <b>&psi;</b>
+										<ul>
+											<li>Prove <b>&phi; &rArr; &psi;</b></li>
+											<li>Prove <b>&phi; &rArr; &not;&psi;</b></li>
+										</ul>
+									</li>
+									<li>Apply <b>Negation Introduction</b> to prove <b>&not;&phi;</b></li>
+									<p style="text-align:justify;">The idea behind G2 is to assume <b>&phi;</b> and show that this leads to a <i>contradiction</i> i.e. <b>&psi;</b> and <b>&not;&psi;</b>. 
+									<i>Good candidates</i> for <b>&psi;</b> when applying <b>Negation Elimination</b> on <b>&phi; &rArr; &psi;</b> and <b>&phi; &rArr; &not;&psi;</b> are the premises or the assumptions (for the sub-proof).</p>
+									Consider the following example.<br/>
+									<b>Premises:</b> <i>q</i>, <i>p &rArr; &not;q</i><br/>
+									<b>Goal:</b> <i>&not;p</i>
+									<br/>Keys to applying G2 to this example is to 
+									<ul>
+										<li>Use <b>&phi;</b> = <i>p</i></li>
+										<li>Find a suitable <b>&psi;</b> to prove <i>p &rArr;</i> <b>&psi;</b>, and <i>p &rArr;</i> <b>&not;&psi;</b></li>
+									</ul>
+									Since <i>p &rArr; &not;q</i> is available as a premise (we don't need to prove it!), if use <b>&psi;</b> = <i>q</i> and prove <i>p &rArr; q</i>, then by applying <b>Negation Introduction</b>, we can prove <i>&not; p</i>. Proving <i>p &rArr; q</i> is quite trivial at this point using G1 and Reiteration.						
+									<br/>
+								</ul>
+							</li>
+							<br/>
+							<li>
+								<b>Goal</b> is of the form <b>&phi;</b> <i>(with no negation on the outside)</i>
+								<ul>
+									<li>Assume <b>&not;&phi;</b> and proceed in a manner similar to G2 (see above) to prove <b>&not;&not;&phi;</b></li>
+									<li>Apply <b>Negation Elimination</b> on the result <b>&not;&not;&phi;</b> to prove <b>&phi;</b></li>
+								</ul>
+							</li>
+							<br/>
+							<li>
+								<b>Goal</b> is of the form <b>&phi;<sub>1</sub></b> &or; <b>&phi;<sub>2</sub></b> &hellip; &or; <b>&phi;<sub>n</sub></b>
+								<ul>
+									<li>Prove <i>any</i> <b>&phi;<sub>i</sub></b> (1 &leq; i &leq; n)</li>
+									<li>Apply <b>OR Introduction</b> to prove <b>&phi;<sub>1</sub></b> &or; <b>&phi;<sub>2</sub></b> &hellip; &or; <b>&phi;<sub>n</sub></b></li>
+								</ul>
+							</li>
+							<br/>
+							<li>
+								<b>Goal</b> is of the form <b>&phi;<sub>1</sub></b> &and; <b>&phi;<sub>2</sub></b> &hellip; &and; <b>&phi;<sub>n</sub></b>
+								<ul>
+									<li>Prove <b>&phi;<sub>i</sub></b> for <i>every</i> i, 1 &leq; i &leq; n</li>
+									<li>Apply <b>AND Introduction</b> to prove <b>&phi;<sub>1</sub></b> &and; <b>&phi;<sub>2</sub></b> &hellip; &and; <b>&phi;<sub>n</sub></b></li>
+								</ul>
+							</li>
+						</ol>
+					</p>
+					<p>Guidelines based on propeties of <b>Premises</b>:
+						<ol id="premise">
+							<li>
+								There exists a <b>Premise</b> of the form <b>&phi; &rArr; &psi;</b> and the <b>Goal</b> is <b>&psi;</b>
+								<ul>
+									<li>Prove <b>&phi;</b></li>
+									<li>
+										Apply <b>Implication Elimination</b> on <b>&phi;</b> and <b>&phi; &rArr; &psi;</b> to prove <b>&psi;</b>
+									</li>
+								</ul>
+								This strategy can be seen as a <i>dual</i> of the strategy G1.
+							</li>
+							<br/>
+							<li>
+								There exists a <b>Premise</b> of the form <b>&phi;<sub>1</sub></b> &or; <b>&phi;<sub>2</sub></b> &hellip; &or; <b>&phi;<sub>n</sub></b> and the <b>Goal</b> is <b>&psi;</b>
+								<ul>
+									<li>Prove <b>&phi;<sub>i</sub> &rArr; &psi;</b> for <i>every</i> i, 1 &leq; i &leq; n</li>
+									<li>Apply <b>OR Elimination</b> to prove <b>&phi;<sub>1</sub></b> &or; <b>&phi;<sub>2</sub></b> &hellip; &or; <b>&phi;<sub>n</sub> &rArr; &psi;</b></li>
+									<li>
+										Apply <b>Implication Elimination</b> on the above result and the premise to prove <b>&psi;</b>
+									</li>
+								</ul>
+							</li>
+						</ol>
+					</p>
+					<h3>Comprehensive example</h3>
+					<b>Premises:</b> <i>p &or; q</i>, <i>&not;p</i><br/>
+					<b>Goal:</b> <i>q</i>
+					<ul style='text-align:justify;'>
+						<li>We can apply either of G3 (since goal has no negations on outside) or P2 (a premise is of the form <b>&phi;<sub>1</sub></b> &or; <b>&phi;<sub>2</sub></b> &hellip; &or; <b>&phi;<sub>n</sub></b>).</li>
+						<li>Applying G3 at the start takes us to a <i>dead-end</i>.</li>
+						<li>However, if we apply P2, we have to prove <i>p &rArr; q</i> and <i>q &rArr; q</i> (the latter is trivial!).</li>
+						<li>To prove <i>p &rArr; q</i> we apply G1 i.e. start by assuming <i>p</i>. We have to prove <i>q</i> given the premises <i>p &or; q</i> and <i>&not;p</i> and the assumption <i>p</i>.</li>
+						<li>NOW, we can apply the strategy G3 (which earlier led us to a dead-end). The remainder of the proof is left as an exercise for the reader.</li>
+					</ul>
+					<p style='text-align:justify;'>
+						<b>REMEMBER:</b>
+						<ul>
+							<li>Apply G1-G5 to <i>reverse-engineer</i> which sub-goals to prove <i>prior to</i> proving the <b>goal</b>.</li>
+							<li>Apply P1-P2 to figure out which sub-goals to prove <i>next</i> starting from the <b>premises</b> or an <b>assumption</b> (in case of a sub-proof).</li>
+						</ul>
+					</p>
+			  	</td>
+		  	</tr>
+		</table>
+	</center>
+</body>
+</html>
