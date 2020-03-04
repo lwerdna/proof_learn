@@ -1,0 +1,403 @@
+<html><!--=======================================================================--><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+  <title>Disjunction Elimination</title>
+  <script type="text/javascript" src="./logica.js"></script>
+  <script type="text/javascript" src="./herbrand.js"></script>
+  <script type="text/javascript" src="./fitchercise.js"></script>
+</head>
+
+<!--=======================================================================-->
+
+<body style="background-color:#990000" onload="doinitialize()">
+  <center>
+    <table width="720" cellpadding="40" bgcolor="#ffffff">
+      <tbody><tr>
+        <td>
+
+<!--=======================================================================--> 
+
+<center>
+  <span style="color:#888888;cursor:pointer" onclick="toggleinstructions(this)">Show Instructions</span>
+</center>
+
+<p id="instructions" style="margin:20px;display:none">To apply a rule of
+ inference, check the lines you wish to use as premises and click the 
+button for the rule of inference.  Reiteration allows you to repeat an 
+earlier item.  To delete one or more lines from a proof, check the 
+desired lines and click Delete.  When entering expressions, use Ascii 
+characters only.  Use ~ for ¬; use &amp; for &#8743;; use | for &#8744;; use =&gt; 
+for &#8658;; use &lt;=&gt; for &#8660;.</p>
+
+<!--=======================================================================--> 
+
+<center>
+  <table width="640" cellspacing="0" cellpadding="0" border="1">
+    <tbody><tr>
+      <td style="font-size:24px" height="40" bgcolor="#eeeeee" align="center">Fitch</td>
+    </tr>
+    <tr>
+      <td align="center">
+        <div id="proof">
+			<!-- javascript populates this -->
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <table width="100%" cellspacing="0" cellpadding="0" bgcolor="#eeeeee">
+          <tbody><tr height="30">
+            <td width="40">Goal</td>
+            <td id="goal" style="border-left:2px solid #000000;padding:5px">&nbsp;&nbsp;herp</td>
+            <td id="status" style="color:#ff0000" width="200">Incomplete</td>
+          </tr>
+        </tbody></table>
+      </td>
+    </tr>
+
+<!--=======================================================================-->
+
+    <tr id="premise" style="display:none">
+      <td>
+<table cellspacing="0" cellpadding="10" border="0"><tbody><tr><td>
+Enter the premise you wish to add to the proof:<br><br>
+<input id="newpremise" type="text" size="40"><br>
+<input type="button" value="Add" onclick="addpremise()">
+<input type="button" value="Cancel" onclick="unpremise()">
+</td></tr></tbody></table>
+      </td>
+    </tr>
+
+<!--=======================================================================-->
+
+    <tr id="assumption" style="display:none">
+      <td>
+<table cellspacing="0" cellpadding="10" border="0"><tbody><tr><td>
+Enter the assumption you wish to make:<br><br>
+<input id="newassumption" type="text" size="40"><br>
+<input type="button" value="Add" onclick="addassumption()">
+<input type="button" value="Cancel" onclick="unassumption()">
+</td></tr></tbody></table>
+      </td>
+    </tr>
+
+<!--=======================================================================-->
+
+    <tr id="shortcut" style="display:none">
+      <td>
+<table cellspacing="0" cellpadding="10" border="0"><tbody><tr><td>
+Enter the conclusion you wish to add to the proof:<br><br>
+<input id="newconclusion" type="text" size="40"><br>
+Enter the justification for this conclusion:<br><br>
+<input id="newjustification" type="text" size="40"><br>
+<input type="button" value="Add" onclick="addshortcut()">
+<input type="button" value="Cancel" onclick="unshortcut()">
+</td></tr></tbody></table>
+      </td>
+    </tr>
+
+<!--=======================================================================-->
+
+    <tr id="oi" style="display:none">
+      <td>
+<table cellspacing="0" cellpadding="10" border="0"><tbody><tr><td>
+Enter the sentence you wish to disjoin to the checked items:<br><br>
+<input id="newoi" type="text" size="40"><br>
+<input type="button" value="Add" onclick="addoi()">
+<input type="button" value="Cancel" onclick="unoi()">
+</td></tr></tbody></table>
+      </td>
+    </tr>
+
+<!--=======================================================================-->
+
+    <tr id="oe" style="display:none">
+      <td align="center">
+<table cellspacing="0" cellpadding="10" border="0"><tbody><tr><td>
+Or Elimination:<br>
+<center>
+<table><tbody><tr><td>
+&#966;&#8744;&#968;<br>
+&#966;&#8658;&#967;<br>
+&#968;&#8658;&#967;<br>
+<hr>
+&#967;<br>
+</td></tr></tbody></table>
+</center>
+</td></tr></tbody></table>
+      </td>
+    </tr>
+
+<!--=======================================================================-->
+
+    <tr id="ui" style="display:none">
+      <td>
+<table cellspacing="0" cellpadding="10" border="0"><tbody><tr><td>
+Universal Introduction:<br>
+<center>
+<table><tbody><tr><td>
+&#966;<br>
+<hr>
+A&#957;:&#966;
+</td></tr></tbody></table>
+</center>
+<br>
+Enter the variable you would like to use:<br><br>
+<table>
+<tbody><tr><th>&#957;:</th><td><input id="uinu" type="text"></td></tr>
+</tbody></table>
+<center>
+<input type="button" value="Add" onclick="addui()">
+<input type="button" value="Cancel" onclick="unui()">
+</center>
+</td></tr></tbody></table>
+      </td>
+    </tr>
+
+<!--=======================================================================-->
+
+    <tr id="ue" style="display:none">
+      <td>
+<table cellspacing="0" cellpadding="10" border="0"><tbody><tr><td>
+Universal Elimination:<br>
+<center>
+<table><tbody><tr><td>
+A&#957;:&#966;<br>
+<hr>
+&#966;[&#957;&#8592;&#964;]<br>
+where &#964; is free for &#957; in &#966;
+</td></tr></tbody></table>
+</center>
+<br>
+Enter the term you would like to use:<br><br>
+<table>
+<tbody><tr><td>&#964;:</td><td><input id="uetau" type="text" size="40"></td></tr>
+</tbody></table>
+<center>
+<input type="button" value="Add" onclick="addue()">
+<input type="button" value="Cancel" onclick="unue()">
+</center>
+</td></tr></tbody></table>
+      </td>
+    </tr>
+
+<!--=======================================================================-->
+
+    <tr id="ei" style="display:none">
+      <td>
+<table cellspacing="0" cellpadding="10" border="0"><tbody><tr><td>
+Existential Introduction:<br>
+<center>
+<table><tbody><tr><td>
+&#966;(&#964;)<br>
+<hr>
+E&#957;:&#966;(&#957;)
+</td></tr></tbody></table>
+</center>
+<br>
+Enter the term you would like to replace:<br><br>
+<table>
+<tbody><tr><th>&#964;:</th><td><input id="egtau" type="text"></td></tr>
+</tbody></table>
+<br>
+Enter the variable you would like to use:<br><br>
+<table>
+<tbody><tr><th>&#957;:</th><td><input id="egnu" type="text"></td></tr>
+</tbody></table>
+<center>
+<input type="button" value="Add" onclick="addei()">
+<input type="button" value="Cancel" onclick="unei()">
+</center>
+</td></tr></tbody></table>
+      </td>
+    </tr>
+
+<!--=======================================================================-->
+
+    <tr id="qi" style="display:none">
+      <td>
+<table cellspacing="0" cellpadding="10" border="0"><tbody><tr><td>
+Equality Introduction:<br>
+<center>
+<table><tbody><tr><td>
+&#964;=&#964;<br>
+</td></tr></tbody></table>
+</center>
+<br>
+Enter the term you would like to use:<br><br>
+<table>
+<tbody><tr><th>&#964;:</th><td><input id="qitau" type="text"></td></tr>
+</tbody></table>
+<br>
+<center>
+<input type="button" value="Add" onclick="addqi()">
+<input type="button" value="Cancel" onclick="unqi()">
+</center>
+</td></tr></tbody></table>
+      </td>
+    </tr>
+
+<!--=======================================================================-->
+
+    <tr>
+      <td bgcolor="#eeeeee" align="center">
+<br>
+<table>
+  <tbody><tr>
+    <td valign="top">
+<input type="button" id="dopremise" value="Premise" style="width:150;background-color:#ffffff" onclick="dopremise()" disabled="disabled"><br>
+<input type="button" id="doassumption" value="Assumption" style="width:150;background-color:#ffffff" onclick="doassumption()"><br>
+<input type="button" name="command" value="Reiteration" style="width:150;background-color:#ffffff" onclick="doreiteration()"><br>
+<input type="button" name="command" value="Delete" style="width:150;background-color:#ffffff" onclick="dodelete()"><br>
+    </td>
+    <td valign="top">
+<input type="button" name="command" value="Negation Introduction" style="width:150;background-color:#ffffff" onclick="doni()"><br>
+<input type="button" name="command" value="Negation Elimination" style="width:150;background-color:#ffffff" onclick="done()"><br>
+<input type="button" name="command" value="And Introduction" style="width:150;background-color:#ffffff" onclick="doai()"><br>
+<input type="button" name="command" value="And Elimination" style="width:150;background-color:#ffffff" onclick="doae()"><br>
+<input type="button" name="command" value="Or Introduction" style="width:150;background-color:#ffffff" onclick="dooi()"><br>
+<input type="button" name="command" value="Or Elimination" style="width:150;background-color:#ffffff" onclick="dooe()"><br>
+    </td>
+    <td valign="top">
+<input type="button" id="doii" value="Implication Introduction" style="width:150;background-color:#ffffff" onclick="doii()" disabled="disabled"><br>
+<input type="button" name="command" value="Implication Elimination" style="width:150;background-color:#ffffff" onclick="doie()"><br>
+<input type="button" name="command" value="Biconditional Introduction" style="width:150;background-color:#ffffff" onclick="dobi()"><br>
+<input type="button" name="command" value="Biconditional Elimination" style="width:150;background-color:#ffffff" onclick="dobe()"><br>
+<!--<input type='button' name=command value='Equality Introduction' style='width:150;background-color:#ffffff' onClick='doqi()'/><br/>-->
+<!--<input type='button' name=command value='Equality Elimination' style='width:150;background-color:#ffffff' onClick='doqe()'/><br/>-->
+    </td>
+    <td style="display:none" valign="top">
+<input type="button" name="command" value="Universal Introduction" style="width:150;background-color:#ffffff" onclick="doui()"><br>
+<input type="button" name="command" value="Universal Elimination" style="width:150;background-color:#ffffff" onclick="doue()"><br>
+<input type="button" name="command" value="Existential Introduction" style="width:150;background-color:#ffffff" onclick="doei()"><br>
+<input type="button" name="command" value="Existential Elimination" style="width:150;background-color:#ffffff" onclick="doee()"><br>
+<input type="button" id="dodc" name="command" value="Domain Closure" style="width:150;background-color:#ffffff" onclick="dodc()" disabled="disabled"><br>
+<input type="button" id="doind" name="command" value="Induction" style="width:150;background-color:#ffffff" onclick="doind()" disabled="disabled"><br>
+    </td>
+  </tr>
+</tbody></table>
+<br>
+
+<input type="button" name="command" value="Show Answer" style="width:150;background-color:#ffffff" onclick="showanswer()">
+<input type="button" name="command" value="Reset" style="width:150;background-color:#ffffff" onclick="doreset()">
+<input type="button" name="command" value="Show XML" style="width:150;background-color:#ffffff" onclick="doxml()"><br>
+
+
+<br>
+     </td>
+    </tr>
+  </tbody></table>
+</center>
+
+<!--=======================================================================-->
+
+<div id="answer" style="display:none">
+<proof>
+  <step>
+    <number>1</number>
+    <sentence>p | q</sentence>
+    <justification>Premise</justification>
+  </step>
+  <step>
+    <number>2</number>
+    <sentence>~p</sentence>
+    <justification>Premise</justification>
+  </step>
+  <step>
+    <number>3</number>
+    <sentence>q</sentence>
+    <justification>Assumption</justification>
+  </step>
+  <step>
+    <number>4</number>
+    <sentence>q</sentence>
+    <justification>Reiteration</justification>
+    <antecedent>3</antecedent>
+  </step>
+  <step>
+    <number>5</number>
+    <sentence>q => q</sentence>
+    <justification>Implication Introduction</justification>
+    <antecedent>3</antecedent>
+    <antecedent>4</antecedent>
+  </step>
+  <step>
+    <number>6</number>
+    <sentence>p</sentence>
+    <justification>Assumption</justification>
+  </step>
+  <step>
+    <number>7</number>
+    <sentence>~q</sentence>
+    <justification>Assumption</justification>
+  </step>
+  <step>
+    <number>8</number>
+    <sentence>p</sentence>
+    <justification>Reiteration</justification>
+    <antecedent>6</antecedent>
+  </step>
+  <step>
+    <number>9</number>
+    <sentence>~q => p</sentence>
+    <justification>Implication Introduction</justification>
+    <antecedent>7</antecedent>
+    <antecedent>8</antecedent>
+  </step>
+  <step>
+    <number>10</number>
+    <sentence>~q</sentence>
+    <justification>Assumption</justification>
+  </step>
+  <step>
+    <number>11</number>
+    <sentence>~p</sentence>
+    <justification>Reiteration</justification>
+    <antecedent>2</antecedent>
+  </step>
+  <step>
+    <number>12</number>
+    <sentence>~q => ~p</sentence>
+    <justification>Implication Introduction</justification>
+    <antecedent>10</antecedent>
+    <antecedent>11</antecedent>
+  </step>
+  <step>
+    <number>13</number>
+    <sentence>~~q</sentence>
+    <justification>Negation Introduction</justification>
+    <antecedent>9</antecedent>
+    <antecedent>12</antecedent>
+  </step>
+  <step>
+    <number>14</number>
+    <sentence>q</sentence>
+    <justification>Negation Elimination</justification>
+    <antecedent>13</antecedent>
+  </step>
+  <step>
+    <number>15</number>
+    <sentence>p => q</sentence>
+    <justification>Implication Introduction</justification>
+    <antecedent>6</antecedent>
+    <antecedent>14</antecedent>
+  </step>
+  <step>
+    <number>16</number>
+    <sentence>q</sentence>
+    <justification>Or Elimination</justification>
+    <antecedent>1</antecedent>
+    <antecedent>15</antecedent>
+    <antecedent>5</antecedent>
+  </step>
+</proof>
+</div>
+
+<!--=======================================================================-->
+
+          </td>
+        </tr>
+      </tbody></table>
+    </center>
+  
+
+</body></html>
