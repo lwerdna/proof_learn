@@ -4,7 +4,7 @@ I really like [this tool](http://intrologic.stanford.edu/glossary/fitch_system.h
 
 There is no absurdity ⊥ in this system, unlike https://proofs.openlogicproject.org/ which adds some difficulty.
 
-The "Be-Fitched! Strategy Guide" ([local](./strategy.html)) ([Stanford](http://logic.stanford.edu/intrologic/extras/fitch.html)) has very good advice on when to work forward from premises or backward from goals.
+Use the [quick reference](./quickref.html) for a review of all the permitted rules in the Fitch system. The "Be-Fitched! Strategy Guide" ([local](./strategy.html)) ([Stanford](http://logic.stanford.edu/intrologic/extras/fitch.html)) has very good advice on when to work forward from premises or backward from goals.
 
 ## Propositional Logic
 | links | task | notes |
