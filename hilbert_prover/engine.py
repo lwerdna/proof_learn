@@ -11,24 +11,23 @@ class node():
 
 class impl(node):
 	def __init__(self, l, r, n=False):
-		self.left = l
-		self.right = r
+		self.lchild = l
+		self.rchild = r
 	def directions(self):
-		result = ''
-		result += 'L'+self.left.directions()+'U'
-		result += 'R'+self.right.directions()+'U'
+		result = 'L'+self.lchild.directions()+'U'
+		result += 'R'+self.rchild.directions()+'U'
 		return result
 	def vars(self):
-		return self.left.vars() + self.right.vars()
+		return self.lchild.vars() + self.rchild.vars()
 	def rename(self, mapping):
-		self.left.rename(mapping)
-		self.right.rename(mapping)
+		self.lchild.rename(mapping)
+		self.rchild.rename(mapping)
 	def clone(self):
-		return impl(self.left.clone(), self.right.clone())
+		return impl(self.lchild.clone(), self.rchild.clone())
 	def __eq__(self, other):
-		return type(other)==impl and self.left==other.left and self.right==other.right
+		return type(other)==impl and self.lchild==other.lchild and self.rchild==other.rchild
 	def __str__(self):
-		return '(%s->%s)' % (self.left, self.right)
+		return '(%s->%s)' % (self.lchild, self.rchild)
 
 class var(node):
 	def __init__(self, var_name):
@@ -46,6 +45,22 @@ class var(node):
 	def __str__(self):
 		return self.name
 
+class neg(node):
+	def __init__(self, child):
+		self.child = child
+	def directions(self):
+		return 'D'
+	def vars(self):
+		return self.child.vars()
+	def rename(self, mapping):
+		self.child.rename(mapping)
+	def clone(self):
+		return neg(self.child.clone())
+	def __eq__(self, other):
+		return type(other)==neg and self.child==other.child
+	def __str__(self):
+		return '/%s' % self.child
+
 def normalize(term):
 	fount = iter('abcdefjhijklmnopqrstuvwxyz')
 	mapping = {}
@@ -62,15 +77,18 @@ def mp(implication, antecedent):
 	# collect left side
 	lookup = {}
 	cur = antecedent
-	#print('left directions: ', implication.left.directions())
+	#print('left directions: ', implication.lchild.directions())
 	try:
-		for d in implication.left.directions():
+		for d in implication.lchild.directions():
 			if d == 'L':
 				stack.append(cur)
-				cur = cur.left
+				cur = cur.lchild
 			elif d == 'R':
 				stack.append(cur)
-				cur = cur.right
+				cur = cur.rchild
+			elif d == 'D':
+				stack.append(cur)
+				cur = cur.child
 			elif d == 'U':
 				cur = stack.pop()
 			else:
@@ -87,16 +105,16 @@ def mp(implication, antecedent):
 	# create right side
 	i = 0
 	stack.clear()
-	#print('right directions: ', implication.right.directions())
-	for d in implication.right.directions():
+	#print('right directions: ', implication.rchild.directions())
+	for d in implication.rchild.directions():
 		if d == 'L':
 			stack.append(impl(None,None))
 		elif d == 'R':
 			pass
 		elif d == 'U':
 			tmp = stack.pop()
-			if stack[-1].left == None: stack[-1].left = tmp
-			elif stack[-1].right == None: stack[-1].right = tmp
+			if stack[-1].lchild == None: stack[-1].lchild = tmp
+			elif stack[-1].rchild == None: stack[-1].rchild = tmp
 			else: assert False
 		else:
 			if d in lookup:

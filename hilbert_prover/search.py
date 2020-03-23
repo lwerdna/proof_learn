@@ -5,7 +5,8 @@ from engine import *
 # set initial axioms
 ax0 = impl(var('a'),impl(var('b'),var('a')))
 ax1 = impl(impl(var('a'),impl(var('b'),var('c'))),impl(impl(var('a'),var('b')),impl(var('a'),var('c'))))
-gamma = [ax0, ax1]
+ax2 = impl(impl(neg(var('a')), neg(var('b'))), impl(var('b'), var('a')))
+gamma = [ax0, ax1, ax2]
 
 seen = set(map(str, gamma))
 for (i,axiom) in enumerate(gamma):
@@ -13,8 +14,9 @@ for (i,axiom) in enumerate(gamma):
 	print('%d: %s' % (i, axiom))
 print('----')
 
+depth = 0
 frontier = 0
-while len(gamma) < 100:
+while depth < 5:
 	batch = []
 
 	for i in range(len(gamma)):
@@ -36,11 +38,12 @@ while len(gamma) < 100:
 					#print('mp(%d,%d) we have seen before' % (l,r))
 					continue
 
-				print('%d: %s mp(%d,%d)' % (len(gamma)+len(batch), s, l, r))
+				print('%d = mp(%d,%d) # %s' % (len(gamma)+len(batch), l, r, s))
 				seen.add(s)
 				batch.append(c)
 
 	print('----')
 	frontier = len(gamma)
 	gamma.extend(batch)
+	depth += 1
 

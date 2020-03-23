@@ -12,6 +12,7 @@ from engine import *
 ax0 = impl(var('a'),impl(var('b'),var('a')))
 # ((a->(b->c))->((a->b)->(a->c)))
 ax1 = impl(impl(var('a'),impl(var('b'),var('c'))),impl(impl(var('a'),var('b')),impl(var('a'),var('c'))))
+# (/a->/b)->(b->a)
 # ax2 = TODO
 
 # prove (a->a)

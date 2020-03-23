@@ -28,22 +28,30 @@ l = impl(impl(var('a'), var('a')), var('z'))
 assert mp(l, r) == None
 
 # axioms
+
 # (a->(b->a))
 ax0 = impl(var('a'),impl(var('b'),var('a')))
 # ((a->(b->c))->((a->b)->(a->c)))
 ax1 = impl(impl(var('a'),impl(var('b'),var('c'))),impl(impl(var('a'),var('b')),impl(var('a'),var('c'))))
+# (/a->/b)->(b->a)
+ax2 = impl(impl(neg(var('a')), neg(var('b'))), impl(var('b'), var('a')))
 
 assert str(ax0) == '(a->(b->a))'
 assert ax0.directions() == 'LaURLbURaUU'
-assert ax0.left.directions() == 'a'
+assert ax0.lchild.directions() == 'a'
 
 assert str(ax1) == '((a->(b->c))->((a->b)->(a->c)))'
 assert ax1.directions() == 'LLaURLbURcUUURLLaURbUURLaURcUUU'
-assert ax1.left.directions() == 'LaURLbURcUU'
+assert ax1.lchild.directions() == 'LaURLbURcUU'
+assert ax1.rchild.directions() == 'LLaURbUURLaURcUU'
 ax1.rename({'a':'z', 'b':'y', 'c':'x'})
 assert str(ax1) == '((z->(y->x))->((z->y)->(z->x)))'
 normalize(ax1)
 assert str(ax1) == '((a->(b->c))->((a->b)->(a->c)))'
+
+assert str(ax2) == '((/a->/b)->(b->a))'
+assert str(mp(ax0, ax2)) == '(a->((/b->/c)->(c->b)))'
+assert str(mp(ax1, ax2)) == '(((/a->/b)->b)->((/a->/b)->a))'
 
 # test variable introduction
 assert str(mp(ax0, ax0)) == '(a->(b->(c->b)))'
@@ -56,8 +64,4 @@ l = impl(impl(var('a'),impl(var('a'),var('a'))),impl(impl(var('a'),var('a')),imp
 r = impl(impl(var('a'),impl(var('b'),var('c'))),impl(impl(var('a'),var('b')),impl(var('a'),var('c'))))
 #mp(l, r)
 
-# prove (a->a)
-ax2 = mp(ax1, ax0)					# ((a->b)->(a->a))
-ax3 = mp(ax2, ax0)					# (a->a)
-assert str(ax3) == '(a->a)'
 
