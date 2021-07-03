@@ -223,6 +223,11 @@ Check Some nat. (* ok, functional construction *)
 (* Check None nat. *) (* not ok - must be inferred I think *)
 Check Some bool.
 
+
+Definition foo : Type := option nat.
+Definition foo2 : option nat := Some 5.
+Definition foo3 : option nat := None.
+
 (* (A : Type) is like a Haskell type constraint or class constraint
    {A : Type) is same, but implied (coq should infer it)
    
@@ -270,7 +275,9 @@ Proof.
     P: mylen <nil> = 0
     Q: head_opt <nil> = None *)
   simpl.
-  reflexivity.
+  trivial.
+  Show Proof.
+  (* reflexivity. *)
   (* cons x xs => 1 + mylen xs constructor
     P is false
     P: mylen (cons x xs) = 1 + mylen xs != nil FALSE!
