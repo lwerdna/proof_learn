@@ -6,10 +6,10 @@ from stanford_fitch import *
 # given p, q, (p^q => r) prove r
 tree = \
     ImplicationElimination(
-        Assumption('(P&Q)=>R', label='premise3'),
+        Assumption('(P&Q)=>R'),
         AndIntroduction(
-            Assumption('P', label='premise1'),
-            Assumption('Q', label='premise2')
+            Assumption('P'),
+            Assumption('Q')
         ),
     )
 print(tree.str_tree())
@@ -20,9 +20,9 @@ print('--------')
 # http://logic.stanford.edu/intrologic/exercises/exercise_04_02.html
 # given (p ^ q) prove (q v r)
 tree = \
-    OrIntroduction(
-        AndElimination(
-            Assumption('(P&Q)', label='premise1'),
+    OrIntroduction( # Q v R
+        AndElimination( # Q
+            Assumption('(P&Q)'),
             'right'
         ),
         'R'
@@ -33,7 +33,7 @@ assert tree.check_deduction('(Q | R)')
 print('--------')
 
 # http://logic.stanford.edu/intrologic/exercises/exercise_04_03.html
-# Given p ⇒ q and q ⇔ r, use the Fitch system to prove p ⇒ r
+# Given p => q and q <=> r, use the Fitch system to prove p => r
 tree = \
     ImplicationIntroduction(
         ImplicationElimination( # R
@@ -53,7 +53,7 @@ assert tree.check_deduction('(P => R)')
 print('--------')
 
 # http://logic.stanford.edu/intrologic/exercises/exercise_04_04.html
-# Given p ⇒ q and m ⇒ p ∨ q, use the Fitch System to prove m ⇒ q
+# Given p => q and m => p ∨ q, use the Fitch System to prove m => q
 tree = \
     ImplicationIntroduction( # M
         OrElimination( # Q
@@ -74,4 +74,26 @@ tree = \
 print(tree.str_tree())
 assert tree.check_deduction('(M => Q)')
 
+print('--------')
 
+# http://logic.stanford.edu/intrologic/exercises/exercise_04_05.html
+# Given p => (q => r), use the Fitch System to prove (p => q) => (p => r).
+tree = \
+        ImplicationIntroduction(
+            ImplicationIntroduction( # P => R
+                ImplicationElimination( # R
+                    ImplicationElimination( # Q => R
+                    	Assumption('P => (Q => R)'),
+                    	Assumption('P', label='1')
+                    ),
+                    ImplicationElimination( # Q
+                        Assumption('P => Q', label='2'),
+                        Assumption('P', label='1')
+                    )
+                ),
+                discharge='1'
+            ),
+            discharge='2'
+        )
+print(tree.str_tree())
+assert tree.check_deduction('(P => Q) => (P => R)')

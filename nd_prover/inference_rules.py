@@ -256,7 +256,26 @@ class Assumption(ProofTreeNode):
         self.state = 'discharged'
 
     def __str__(self):
-        return '%s: [%s] "%s" %s' % (type(self).__name__, self.deduce(), self.label or '', self.state)
+        return '%s: %s "%s" %s' % (type(self).__name__, self.deduce(), self.label or '', self.state)
 
     def __eq__(self, other):
         return type(self)==type(other) and self.new_prop==other.new_prop and self.state == other.state
+
+# AKA:
+# ex-falso quidlobet
+# principle of explosion
+class IntuitionisticAbsurdity(ProofTreeNode):
+    def __init__(self, a:ProofTreeNode, formula:str):
+        super().__init__()
+        self.children = [a]
+        self.new_prop = parse(formula)
+
+    #  .
+    #  .
+    #  .
+    #  _
+    # ---
+    #  A
+    def deduce(self):
+        assert type(self.children[0].deduce()) == Contradiction
+        return self.new_prop
