@@ -1,0 +1,86 @@
+#lang pie
+
+; demonstrate currying and partial evaluation
+
+; add using iter-Nat
+
+(claim step-add
+	(-> Nat
+		Nat))
+(define step-add
+	(lambda (subresult)
+		(add1 subresult)))
+
+(claim add
+	(-> Nat Nat
+		Nat))
+(define add
+	(lambda (a b)
+		(iter-Nat a
+			b
+			step-add)))
+
+; adds three numbers together
+(claim add3
+	(-> Nat Nat Nat
+		Nat))
+
+(define add3
+	(lambda (a1 a2 a3)
+		(add a3 (add a2 a1))))
+
+; check currying
+;
+; is (lambda (a1 a2 a3)
+;		(add addend subresult))
+;
+; actually
+;		(lambda (a1)
+;			(lambda (a2)
+;				(lambda (a3)
+;					(add addend subresult))))
+;
+; ?
+(claim add3_full
+	(-> Nat Nat Nat
+		Nat))
+
+(define add3_full
+	(lambda (a1)
+		(lambda (a2)
+			(lambda (a3)
+				(add a3 (add a2 a1))))))
+
+(check-same (-> Nat Nat Nat Nat) add3 add3_full)
+
+; if 1 parameter is given, do we get a partial function back?
+
+(claim add3_part1
+	(-> Nat Nat
+		Nat))
+
+(define add3_part1
+	(lambda (a2)
+		(lambda (a3)
+			(add a3 (add a2 123)))))
+
+(check-same (-> Nat Nat Nat) (add3 123) add3_part1)
+
+; if 2 parameters are given
+
+(claim add3_part2
+	(-> Nat
+		Nat))
+
+(define add3_part2
+	(lambda (a3)
+		(add a3 (add 456 123))))
+
+(check-same (-> Nat Nat) (add3 123 456) add3_part2)
+
+; this is actually a step "maker", returning a lambda
+; with  0 parameters, return (-> Nat Nat Nat Nat)
+; with  1 parameters, return (-> Nat Nat Nat)
+; with  2 parameters, return (-> Nat Nat)
+;
+
