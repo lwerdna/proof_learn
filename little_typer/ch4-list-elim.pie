@@ -1,0 +1,63 @@
+#lang pie
+
+;; Exercises on Pi types and using the List elimiator from Chapters 4 and 5
+;; of The Little Typer
+;;
+;; Some exercises are adapted from assignments at Indiana University
+
+
+;; Exercise 4.1
+;;
+;; Extend the definitions of kar and kdr (frame 4.42) so they work with arbirary
+;; Pairs (instead of just for Pair Nat Nat).
+
+(claim elim-Pair
+	(Pi ((A U)
+		 (D U)
+		(X U))
+	(-> (Pair A D)
+		(-> A D X)
+			X )))
+
+(define elim-Pair
+	(lambda (A D X)
+		(lambda (p f)
+			(f (car p) (cdr p))
+		)
+	)
+)
+
+(claim kar
+	(Pi ((A U)
+		  (D U))
+		(-> (Pair A D)
+			A)
+	)
+)
+
+(define kar
+	(lambda (A D)
+		(lambda (p)
+			(elim-Pair
+				A D
+				A
+				p	
+				(lambda (x y) x)
+			)
+		)
+	)
+)
+
+(claim foo
+	(Pair Nat Atom))
+(define foo
+	(cons 7 'days))
+
+(check-same Nat (kar foo) 7)
+
+;; Exercise 4.2
+;;
+;; Define a function called compose that takes (in addition to the type
+;; arguments A, B, C) an argument of type (-> A B) and an argument of
+;; type (-> B C) that and evaluates to a value of type (-> A C), the function
+;; composition of the arguments.
