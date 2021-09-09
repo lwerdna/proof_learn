@@ -5,11 +5,54 @@
 ;;
 ;; Some exercises are adapted from assignments at Indiana University
 
-
 ;; Exercise 4.1
 ;;
 ;; Extend the definitions of kar and kdr (frame 4.42) so they work with arbirary
 ;; Pairs (instead of just for Pair Nat Nat).
+
+(claim kar
+	(Pi ((T1 U)
+		  (T2 U))
+		(-> (Pair T1 T2)
+			T1)
+	)
+)
+
+(define kar
+	(lambda (T1 T2)
+		(lambda (p)
+			(car p)
+		)
+	)
+)
+
+(claim kdr
+	(Pi ((T1 U)
+		  (T2 U))
+		(-> (Pair T1 T2)
+			T2)
+	)
+)
+
+(define kdr
+	(lambda (T1 T2)
+		(lambda (p)
+			(cdr p)
+		)
+	)
+)
+
+(claim foo
+	(Pair Nat Atom))
+(define foo
+	(cons 7 'days))
+
+(check-same Nat (kar Nat Atom foo) 7)
+(check-same Atom (kdr Nat Atom foo) 'days)
+
+;;
+;; Exercise 4.1 Variation - Using elim-Pair
+;;
 
 (claim elim-Pair
 	(Pi ((A U)
@@ -27,33 +70,54 @@
 	)
 )
 
-(claim kar
-	(Pi ((A U)
-		  (D U))
-		(-> (Pair A D)
-			A)
+(claim kar2
+	(Pi ((T1 U)
+		  (T2 U))
+		(-> (Pair T1 T2)
+			T1)
 	)
 )
 
-(define kar
-	(lambda (A D)
+(define kar2
+	(lambda (T1 T2)
 		(lambda (p)
-			(elim-Pair
-				A D
-				A
-				p	
-				(lambda (x y) x)
+			(elim-Pair T1 ; input type0
+					   T2 ; input type1
+					   T1 ; return type
+					   p  ; the pair
+					   (lambda (a b)
+					   		a
+					   )
 			)
 		)
 	)
 )
 
-(claim foo
-	(Pair Nat Atom))
-(define foo
-	(cons 7 'days))
+(claim kdr2
+	(Pi ((T1 U)
+		  (T2 U))
+		(-> (Pair T1 T2)
+			T2)
+	)
+)
 
-(check-same Nat (kar foo) 7)
+(define kdr2
+	(lambda (T1 T2)
+		(lambda (p)
+			(elim-Pair T1 ; input type0
+					   T2 ; input type1
+					   T2 ; return type
+					   p  ; the pair
+					   (lambda (a b)
+					   		b	
+					   )
+			)
+		)
+	)
+)
+
+(check-same Nat (kar2 Nat Atom foo) 7)
+(check-same Atom (kdr2 Nat Atom foo) 'days)
 
 ;; Exercise 4.2
 ;;

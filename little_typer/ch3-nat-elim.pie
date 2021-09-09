@@ -48,20 +48,20 @@
 (check-same Nat (sub1 1) 0)
 (check-same Nat (sub1 0) 0)
 
-(claim _at-least-two?
+(claim at-least-twoB?
 	(-> Nat
 		Atom))
-(define _at-least-two?
+(define at-least-twoB?
 	(lambda (x)
 		(which-Nat (sub1 x)
 			'nil	; if x was 0
 			(lambda (x) 't))))
 
-(check-same Atom (_at-least-two? 4) 't)
-(check-same Atom (_at-least-two? 3) 't)
-(check-same Atom (_at-least-two? 2) 't)
-(check-same Atom (_at-least-two? 1) 'nil)
-(check-same Atom (_at-least-two? 0) 'nil)
+(check-same Atom (at-least-twoB? 4) 't)
+(check-same Atom (at-least-twoB? 3) 't)
+(check-same Atom (at-least-twoB? 2) 't)
+(check-same Atom (at-least-twoB? 1) 'nil)
+(check-same Atom (at-least-twoB? 0) 'nil)
 
 ;; Exercise 3.2
 ;;
