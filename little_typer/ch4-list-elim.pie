@@ -125,3 +125,67 @@
 ;; arguments A, B, C) an argument of type (-> A B) and an argument of
 ;; type (-> B C) that and evaluates to a value of type (-> A C), the function
 ;; composition of the arguments.
+
+(claim compose
+    (Pi ((A U)
+         (B U)
+         (C U)
+        )
+        (-> (-> A B)
+            (-> B C)
+            (-> A C)
+        )
+    )
+)
+
+(define compose
+    (lambda (A B C)
+        (lambda (f1 f2)
+            (lambda (x)
+                (f2 (f1 x))
+            )
+        )
+    )
+)
+
+(claim +
+    (-> Nat Nat
+        Nat))
+(define +
+    (lambda (a b)
+        (rec-Nat a
+            b
+            (lambda (_ subresult) (add1 subresult)))))
+
+(check-same Nat ((compose Nat Nat Nat (+ 3) (+ 7)) 1) 11)
+
+(claim add-3-add-7
+    (-> Nat Nat)
+)
+(define add-3-add-7
+    (compose Nat Nat Nat (+ 3) (+ 7))
+)
+
+(check-same Nat (add-3-add-7 5) 15)
+
+(claim *
+    (-> Nat Nat
+        Nat))
+(define *
+    (lambda (a b)
+        (iter-Nat a
+            0
+            (lambda (subresult) (+ subresult b)))))
+
+(claim collatz_grow
+    (-> Nat Nat)
+)
+(define collatz_grow
+    (compose Nat Nat Nat (* 3) (+ 1))
+)
+
+(check-same Nat (collatz_grow 1) 4)
+(check-same Nat (collatz_grow 3) 10)
+(check-same Nat (collatz_grow 5) 16)
+(check-same Nat (collatz_grow 7) 22)
+

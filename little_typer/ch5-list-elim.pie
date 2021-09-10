@@ -1,0 +1,121 @@
+#lang pie
+
+;; standard stuff
+
+(claim +
+    (-> Nat Nat
+        Nat))
+
+(define +
+    (lambda (a b)
+        (rec-Nat a
+            b
+            (lambda (_ subresult) (add1 subresult)))))
+
+;; Exercise 5.1
+;;
+;; Define a function called sum-List that takes one List Nat argument and
+;; evaluates to a Nat, the sum of the Nats in the list.
+
+(claim sum-List
+    (-> (List Nat)
+        Nat
+    )
+)
+
+(define sum-List
+    (lambda (l)
+        (rec-List l
+            0
+            (lambda (e es n)
+                (+ e n)
+            )
+        )
+    )
+)
+
+(check-same Nat (sum-List (:: 1 (:: 2 (:: 3 (:: 4 (:: 5 nil)))))) 15)
+(check-same Nat (sum-List (:: 2 (:: 4 (:: 6 nil)))) 12)
+(check-same Nat (sum-List (:: 0 (:: 0 (:: 0 nil)))) 0)
+(check-same Nat (sum-List (:: 9 (:: 10 (:: 11 nil)))) 30)
+
+;; Exercise 5.2
+;;
+;; Define a function called maybe-last which takes (in addition to the type
+;; argument for the list element) one (List E) argument and one E argument and
+;; evaluates to an E with value of either the last element in the list, or the
+;; value of the second argument if the list is empty.
+
+(claim step-maybe-last
+    (Pi ((E U))
+        (-> E (List E) E E)
+    )
+)
+
+(define step-maybe-last
+    (lambda (E)
+        (lambda (e es n)
+            ; if(empty(es)):
+            ;   return e
+            ; else:
+            ;   return n
+            (rec-List es
+                e
+                (lambda (e es _)
+                    n
+                )
+            )
+        )
+    )
+)
+
+(claim maybe-last
+    (Pi ((E U))
+        (-> (List E) E E)
+    )
+)
+
+(define maybe-last
+    (lambda (E)
+        (lambda (list default)
+            (rec-List list
+                default
+                (step-maybe-last E) ; this is cool! passing the type in our genericized function
+                                    ; to another genericized function
+            )
+        )
+    )
+)
+
+(check-same Nat (maybe-last Nat (:: 1 (:: 2 (:: 3 (:: 4 (:: 5 nil))))) 333) 5)
+(check-same Nat (maybe-last Nat (:: 1 (:: 2 (:: 3 (:: 4 nil)))) 333) 4)
+(check-same Nat (maybe-last Nat (:: 1 (:: 2 (:: 3 nil))) 333) 3)
+(check-same Nat (maybe-last Nat (:: 1 (:: 2 nil)) 333) 2)
+(check-same Nat (maybe-last Nat (:: 1 nil) 333) 1)
+(check-same Nat (maybe-last Nat nil 333) 333)
+
+(check-same Atom (maybe-last Atom (:: 'one (:: 'two (:: 'three (:: 'four (:: 'five nil))))) 'nil) 'five)
+(check-same Atom (maybe-last Atom (:: 'one (:: 'two (:: 'three (:: 'four nil)))) 'nil) 'four)
+(check-same Atom (maybe-last Atom (:: 'one (:: 'two (:: 'three nil))) 'nil) 'three)
+(check-same Atom (maybe-last Atom (:: 'one (:: 'two nil)) 'nil) 'two)
+(check-same Atom (maybe-last Atom (:: 'one nil) 'nil) 'one)
+(check-same Atom (maybe-last Atom nil 'nil) 'nil)
+
+;; Exercise 5.3
+;;
+;; Define a function called filter-list which takes (in addition to the type
+;; argument for the list element) one (-> E Nat) argument representing a
+;; predicate and one (List E) argument.
+;;
+;; The function evaluates to a (List E) consisting of elements from the list
+;; argument where the predicate is true.
+;;
+;; Consider the predicate to be false for an element if it evaluates to zero,
+;; and true otherwise.
+
+
+;; Exercise 5.4
+;;
+;; Define a function called sort-List-Nat which takes one (List Nat) argument
+;; and evaluates to a (List Nat) consisting of the elements from the list
+;; argument sorted in ascending order.
