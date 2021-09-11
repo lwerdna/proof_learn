@@ -2,27 +2,33 @@
 
 ;; standard stuff
 
-(claim +
-    (-> Nat Nat
-        Nat))
-
+(claim + (-> Nat Nat Nat))
 (define +
     (lambda (a b)
         (rec-Nat a
             b
             (lambda (_ subresult) (add1 subresult)))))
 
+(claim sub1 (-> Nat Nat))
+(define sub1
+    (lambda (x)
+        (which-Nat x
+            0
+            (lambda (k) k))))
+
+(claim - (-> Nat Nat Nat))
+(define -
+    (lambda (a b)
+        (iter-Nat b
+            a
+            sub1)))
+
 ;; Exercise 5.1
 ;;
 ;; Define a function called sum-List that takes one List Nat argument and
 ;; evaluates to a Nat, the sum of the Nats in the list.
 
-(claim sum-List
-    (-> (List Nat)
-        Nat
-    )
-)
-
+(claim sum-List (-> (List Nat) Nat))
 (define sum-List
     (lambda (l)
         (rec-List l
@@ -113,9 +119,208 @@
 ;; Consider the predicate to be false for an element if it evaluates to zero,
 ;; and true otherwise.
 
+(claim select0
+    (Pi ((E U))
+        (-> Nat E E E)))
+
+(define select0
+    (lambda (E)
+        (lambda (n a b)
+            (which-Nat n
+                a
+                (lambda (x) b)))))
+
+(check-same Atom (select0 Atom 0 'left 'right) 'left)
+(check-same Atom (select0 Atom 1 'left 'right) 'right)
+(check-same Nat (select0 Nat 0 333 444) 333)
+(check-same Nat (select0 Nat 1 333 444) 444)
+(check-same (List Atom) (select0 (List Atom) 0 (:: 'A (:: 'B nil)) (:: 'C (:: 'D nil))) (:: 'A (:: 'B nil)))
+(check-same (List Atom) (select0 (List Atom) 1 (:: 'A (:: 'B nil)) (:: 'C (:: 'D nil))) (:: 'C (:: 'D nil)))
+
+(claim empty-list
+    (Pi ((E U))
+        (List E)))
+
+(define empty-list
+    (lambda (E)
+        nil))
+
+(claim filter-list
+    (Pi ((E U))
+        (-> (-> E Nat)  ; predicate
+            (List E)    ; input list
+            (List E)    ; output list
+        )
+    )
+)
+
+(define filter-list
+    (lambda (E)
+        (lambda (predicate input)
+            (rec-List input
+                (empty-list E)
+                (lambda (e es subanswer)
+                    (select0 (List E)
+                        (predicate e)
+                        subanswer           ; predicate false -> return subanswer
+                        (:: e subanswer)    ; predicate true -> return (:: e subanswer)
+                    )
+                )
+            )
+        )
+    )
+)
+
+; a predicate for testing: is a given number greater than 3?
+
+(claim greater-than-three (-> Nat Nat))
+(define greater-than-three
+    (lambda (n)
+        (select0 Nat
+            (- n 3)
+            0           ; n-3 zero, n <= 3, return 0
+            1           ; n-3 nonzero, n > 3, return 1
+        )
+    )
+)
+(check-same Nat (greater-than-three 6) 1)
+(check-same Nat (greater-than-three 5) 1)
+(check-same Nat (greater-than-three 4) 1)
+(check-same Nat (greater-than-three 3) 0)
+(check-same Nat (greater-than-three 2) 0)
+(check-same Nat (greater-than-three 1) 0)
+(check-same Nat (greater-than-three 0) 0)
+
+(check-same (List Nat)
+    (filter-list Nat greater-than-three
+        (:: 6 (:: 5 (:: 4 (:: 3 (:: 2 (:: 1 nil))))))
+    )
+        (:: 6 (:: 5 (:: 4 nil)))
+)
+
+; a predicate for testing: is a given number even?
+
+(claim even (-> Nat Nat))
+(define even
+    (lambda (n)
+        (iter-Nat n
+            1
+            (lambda (subresult)
+                (select0 Nat subresult 1 0)
+            )
+        )
+    )
+)
+(check-same Nat (even 6) 1)
+(check-same Nat (even 5) 0)
+(check-same Nat (even 4) 1)
+(check-same Nat (even 3) 0)
+(check-same Nat (even 2) 1)
+(check-same Nat (even 1) 0)
+(check-same Nat (even 0) 1)
+
+(check-same (List Nat)
+    (filter-list Nat even
+        (:: 6 (:: 5 (:: 4 (:: 3 (:: 2 (:: 1 (:: 0 nil)))))))
+    )
+        (:: 6 (:: 4 (:: 2 (:: 0 nil))))
+)
 
 ;; Exercise 5.4
 ;;
 ;; Define a function called sort-List-Nat which takes one (List Nat) argument
 ;; and evaluates to a (List Nat) consisting of the elements from the list
 ;; argument sorted in ascending order.
+
+; ability to test a > b
+(claim greater-than (-> Nat Nat Nat))
+(define greater-than
+    (lambda (a b)
+        (select0 Nat
+            (- a b)
+            0           ; a-b zero, a<=b, return 0
+            1           ; a-b nonzero, a>b, return 1
+        )
+    )
+)
+(check-same Nat (greater-than 6 8) 0)
+(check-same Nat (greater-than 5 2) 1)
+(check-same Nat (greater-than 4 8) 0)
+(check-same Nat (greater-than 3 2) 1)
+(check-same Nat (greater-than 2 2) 0)
+(check-same Nat (greater-than 1 8) 0)
+(check-same Nat (greater-than 0 0) 0)
+(check-same Nat (greater-than 1 0) 1)
+
+; ability to test if a <= b
+(claim less-equal-than (-> Nat Nat Nat))
+(define less-equal-than
+    (lambda (a b)
+        (select0 Nat
+            (greater-than a b)
+            1
+            0
+        )
+    )
+)
+(check-same Nat (less-equal-than 6 8) 1)
+(check-same Nat (less-equal-than 5 2) 0)
+(check-same Nat (less-equal-than 4 8) 1)
+(check-same Nat (less-equal-than 3 2) 0)
+(check-same Nat (less-equal-than 2 2) 1)
+(check-same Nat (less-equal-than 1 8) 1)
+(check-same Nat (less-equal-than 0 0) 1)
+(check-same Nat (less-equal-than 1 0) 0)
+
+; ability to concatenate two (List Nat)
+(claim concat-nats (-> (List Nat) (List Nat) (List Nat)))
+(define concat-nats
+    (lambda (a b)
+        (rec-List a
+            b
+            (lambda (e es subresult)
+                (:: e subresult)))))
+(check-same (List Nat) (concat-nats (:: 1 (:: 2 nil)) (:: 3 (:: 4 nil))) (:: 1 (:: 2 (:: 3 (:: 4 nil)))))
+(check-same (List Nat) (concat-nats (:: 1 nil) nil ) (:: 1 nil))
+
+; ability to insert an element into a previously sorted list
+(claim insert
+    (-> (List Nat)
+        Nat
+        (List Nat)
+    )
+)
+(define insert
+    (lambda (list elem)
+        (concat-nats
+            (filter-list Nat (greater-than elem) list)
+            (:: elem
+                (filter-list Nat (less-equal-than elem) list)
+            )
+        )
+    )
+)
+
+(check-same (List Nat) (insert (:: 1 (:: 2 (:: 3 (:: 4 (:: 5 (:: 6 (:: 7 nil))))))) 5)
+                                (:: 1 (:: 2 (:: 3 (:: 4 (:: 5 (:: 5 (:: 6 (:: 7 nil)))))))))
+(check-same (List Nat) (insert (:: 1 (:: 2 (:: 3 (:: 4 (:: 5 (:: 6 (:: 7 nil))))))) 0)
+                                (:: 0 (:: 1 (:: 2 (:: 3 (:: 4 (:: 5 (:: 6 (:: 7 nil)))))))))
+(check-same (List Nat) (insert (:: 1 (:: 2 (:: 3 (:: 4 (:: 5 (:: 6 (:: 7 nil))))))) 8)
+                                (:: 1 (:: 2 (:: 3 (:: 4 (:: 5 (:: 6 (:: 7 (:: 8 nil)))))))))
+
+(claim sort-List-Nat (-> (List Nat) (List Nat)))
+(define sort-List-Nat
+    (lambda (input)
+        (rec-List input
+            (empty-list Nat)
+            (lambda (e es subresult)
+                (insert subresult e)
+            )
+        )
+    )
+)
+
+(check-same (List Nat) (sort-List-Nat (:: 4 nil)) (:: 4 nil))
+(check-same (List Nat) (sort-List-Nat (:: 10 (:: 9 (:: 8 (:: 7 (:: 6 (:: 5 (:: 4 nil)))))))) (:: 4 (:: 5 (:: 6 (:: 7 (:: 8 (:: 9 (:: 10 nil))))))))
+(check-same (List Nat) (sort-List-Nat (:: 2 (:: 1 (:: 2 (:: 3 (:: 2 (:: 1 (:: 0 (:: 4 nil))))))))) (:: 0 (:: 1 (:: 1 (:: 2 (:: 2 (:: 2 (:: 3 (:: 4 nil)))))))))
+(check-same (List Nat) (sort-List-Nat (:: 2 (:: 10 (:: 8 (:: 1 (:: 4 (:: 3 (:: 2 (:: 9 nil))))))))) (:: 1 (:: 2 (:: 2 (:: 3 (:: 4 (:: 8 (:: 9 (:: 10 nil)))))))))

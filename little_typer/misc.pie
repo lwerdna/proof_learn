@@ -32,4 +32,6 @@
 (check-same Pear (cons 9 0) (sub1pear (cons 10 0)))
 (check-same Pear (cons 27 33) (sub1pear (cons 28 34)))
 
-
+;
+(:: 1 (:: 2 (:: 3 nil)))
+(:: nil (:: 1 (:: 2 (:: 3 nil))))
