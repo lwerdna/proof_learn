@@ -137,14 +137,6 @@
 (check-same (List Atom) (select0 (List Atom) 0 (:: 'A (:: 'B nil)) (:: 'C (:: 'D nil))) (:: 'A (:: 'B nil)))
 (check-same (List Atom) (select0 (List Atom) 1 (:: 'A (:: 'B nil)) (:: 'C (:: 'D nil))) (:: 'C (:: 'D nil)))
 
-(claim empty-list
-    (Pi ((E U))
-        (List E)))
-
-(define empty-list
-    (lambda (E)
-        nil))
-
 (claim filter-list
     (Pi ((E U))
         (-> (-> E Nat)  ; predicate
@@ -158,7 +150,7 @@
     (lambda (E)
         (lambda (predicate input)
             (rec-List input
-                (empty-list E)
+                (the (List E) nil)
                 (lambda (e es subanswer)
                     (select0 (List E)
                         (predicate e)
@@ -312,7 +304,7 @@
 (define sort-List-Nat
     (lambda (input)
         (rec-List input
-            (empty-list Nat)
+            (the (List Nat) nil)
             (lambda (e es subresult)
                 (insert subresult e)
             )
