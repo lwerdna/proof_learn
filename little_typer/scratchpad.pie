@@ -1,0 +1,90 @@
+#lang pie
+
+(claim sub1
+    (-> Nat Nat))
+(define sub1
+    (lambda (x)
+        (which-Nat x
+            0
+            (lambda (k) k))))
+
+(check-same Nat (sub1 5) 4)
+(check-same Nat (sub1 1) 0)
+(check-same Nat (sub1 0) 0)
+
+(claim Pear
+    U)
+(define Pear
+    (Pair Nat Nat))
+
+; (a,b) -> (a-1, b-1)
+(claim sub1pear
+    (-> Pear
+        Pear))
+(define sub1pear
+    (lambda (x)
+        (cons (sub1 (car x)) (sub1 (cdr x)))))
+
+(check-same Pear (cons 2 3) (sub1pear (cons 3 4)))
+(check-same Pear (cons 0 3) (sub1pear (cons 1 4)))
+(check-same Pear (cons 0 3) (sub1pear (cons 0 4)))
+(check-same Pear (cons 9 0) (sub1pear (cons 10 1)))
+(check-same Pear (cons 9 0) (sub1pear (cons 10 0)))
+(check-same Pear (cons 27 33) (sub1pear (cons 28 34)))
+
+;
+; (:: 1 (:: 2 (:: 3 nil)))
+; (:: 0 (:: 1 (:: 2 (:: 3 nil))))
+
+; Since nil is a (List Atom) and a (List Nat) and a (List x),
+; how can we tell Pie which one we intend when supplying it to a function needing a base case?
+;
+; if we put just nil, Pie responds "Can't determine a type"
+
+; technique #1: use "the" type hint:
+
+(claim incr-list
+    (-> (List Nat)
+        (List Nat)
+    )
+)
+
+(define incr-list
+    (lambda (input)
+        (rec-List input
+            (the (List Nat) nil)
+            (lambda (e es subresult)
+                (:: (add1 e) subresult))
+        )
+    )
+)
+
+(incr-list (:: 1 (:: 2 (:: 3 nil))))
+
+; technique #2: use a function that returns an empty list of the type we want:
+
+(claim make-empty-list
+    (Pi ((E U))
+        (List E)))
+
+(define make-empty-list
+    (lambda (E)
+        nil))
+
+(claim incr-list2
+    (-> (List Nat)
+        (List Nat)
+    )
+)
+
+(define incr-list2
+    (lambda (input)
+        (rec-List input
+            (make-empty-list Nat)
+            (lambda (e es subresult)
+                (:: (add1 e) subresult))
+        )
+    )
+)
+
+(incr-list2 (:: 1 (:: 2 (:: 3 nil))))
