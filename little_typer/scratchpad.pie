@@ -12,6 +12,15 @@
 (check-same Nat (sub1 1) 0)
 (check-same Nat (sub1 0) 0)
 
+(claim -
+    (-> Nat Nat
+        Nat))
+(define -
+    (lambda (a b)
+        (iter-Nat b
+            a
+            sub1)))
+
 (claim Pear
     U)
 (define Pear
@@ -48,7 +57,6 @@
         (List Nat)
     )
 )
-
 (define incr-list
     (lambda (input)
         (rec-List input
@@ -66,7 +74,6 @@
 (claim make-empty-list
     (Pi ((E U))
         (List E)))
-
 (define make-empty-list
     (lambda (E)
         nil))
@@ -76,7 +83,6 @@
         (List Nat)
     )
 )
-
 (define incr-list2
     (lambda (input)
         (rec-List input
@@ -88,3 +94,127 @@
 )
 
 (incr-list2 (:: 1 (:: 2 (:: 3 nil))))
+
+;------------------------------------------------------------------------------
+; ch6: Precisely How Many?
+;------------------------------------------------------------------------------
+
+; all type constructors we've seen so far take another type as a parameter:
+;     (Pair Atom Nat)
+;     (List Atom)
+; but now they can take non-type stuff, like values of Nat
+
+(the (Vec Atom 1) (vec:: 'A vecnil))
+(the (Vec Atom 2) (vec:: 'A (vec:: 'B vecnil)))
+(the (Vec Atom 3) (vec:: 'A (vec:: 'B (vec:: 'C vecnil))))
+
+(claim first-of-one
+    (Pi ((E U))
+        (-> (Vec E 1)
+            E)))
+(define first-of-one
+    (lambda (E v)
+        (head v)))
+
+(first-of-one Atom (vec:: 'A vecnil))
+
+(claim first-of-two
+    (Pi ((E U))
+        (-> (Vec E 2)
+            E)))
+(define first-of-two
+    (lambda (E v)
+        (head v)))
+
+(first-of-two Atom (vec:: 'A (vec:: 'B vecnil)))
+
+(claim first
+    (Pi ((E U)
+        (l Nat))
+        (-> (Vec E (add1 l)) ; (first E 0) accepts a Vec length 1
+            E)))
+(define first
+    (lambda (E l)
+        (lambda (v)
+            (head v))))
+
+(first Atom 1 (vec:: 'A (vec:: 'B vecnil)))
+
+; are lambda expressions really just special cases of Pi expressions?
+; or: are Pi expressions really just generalized lambda expressions?
+
+(claim incr-list3
+    (Pi ((input (List Nat))) ; <name>:<type> listed in their own ()'s
+        (List Nat)))
+
+(define incr-list3
+    (lambda (input)
+        (rec-List input
+            (make-empty-list Nat)
+            (lambda (e es subresult)
+                (:: (add1 e) subresult))
+        )
+    )
+)
+
+(incr-list3 (:: 1 (:: 2 (:: 3 nil))))
+
+;------------------------------------------------------------------------------
+; ch7: It All Depends on the Motive
+;------------------------------------------------------------------------------
+
+; cannot use rec-Nat! because base type parameter is static, but during recursion
+; the type will always be changing (Vec Atom 0), (Vec Atom 1), ...
+
+; recall rec-Nat takes "target", "base", "step"
+; ind-Nat lets you use current target to specify the type of base, step
+; the extra arg is given to a function (-> Nat U) called the motive
+; entire ind-Nat type is the result of motive applied to top level target
+
+; the step now maps from type (motive (n-1)) to (motive n)
+
+; (ind-Nat
+;   target
+;   motive
+;   base    <- has the type returned by (motive 0)
+;   step    <- has the type returned by (motive <current>)
+; )
+
+; 0 -> (Vec Atom 0)
+; 1 -> (Vec Atom 1)
+; 2 -> (Vec Atom 2)
+; ...
+(claim mot-peas
+    (-> Nat U)) ; function returns a type
+(define mot-peas
+    (lambda (k)
+        (Vec Atom k))) ; function returns a type
+
+; (Vec Atom 0) -> (Vec Atom 1)
+; (Vec Atom 1) -> (Vec Atom 2)
+; (Vec Atom 2) -> (Vec Atom 3)
+; ...
+(claim step-peas
+    (Pi ((n Nat))
+        (-> (mot-peas n) (mot-peas (add1 n))))) ; not only is step-peas's type dependent on n, it's
+                                                ; dependent on the outcoming of an expression involving n!
+(define step-peas
+    (lambda (n)
+        (lambda (subresult)
+            (vec:: 'pea subresult))))
+
+(claim peas
+    (Pi ((how-many-peas Nat))
+        (Vec Atom how-many-peas)))
+(define peas
+    (lambda (how-many-peas)
+        (ind-Nat how-many-peas
+            mot-peas
+            vecnil
+            step-peas
+        )))
+
+(peas 0)
+(peas 1)
+(peas 8)
+(peas 16)

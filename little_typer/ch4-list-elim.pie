@@ -1,6 +1,6 @@
 #lang pie
 
-;; Exercises on Pi types and using the List elimiator from Chapters 4 and 5
+;; Exercises on Pi types and using the List eliminator from Chapters 4 and 5
 ;; of The Little Typer
 ;;
 ;; Some exercises are adapted from assignments at Indiana University
