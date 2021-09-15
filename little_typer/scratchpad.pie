@@ -221,6 +221,8 @@
 (peas 8)
 (peas 16)
 
+(head (peas 8))
+
 (peas 8)
 (tail (peas 8))
 (tail (tail (peas 8)))
@@ -312,6 +314,9 @@
 ;(step-last (Vec Atom 0)
 ;(base-last Atom)
 
+; last doesn't actually process the vector
+; it computes and returns a function that can be applied to the vector
+;
 (claim last ; takes a Type, a Nat, and returns
     (Pi ((E U) (l Nat))
         (-> (Vec E (add1 l))

@@ -1,0 +1,98 @@
+#lang pie
+
+;; Exercises on Vec and ind-Nat from Chapters 6 and 7 of The Little
+;; Typer
+
+(claim +
+       (-> Nat Nat
+           Nat))
+
+(define +
+  (λ (a b)
+    (rec-Nat a
+             b
+             (λ (a-k b+a-k)
+               (add1 b+a-k)))))
+
+;; Exercise 7.0
+;;
+;; Define a function called zip that takes an argument of type (Vec A n) and a
+;; second argument of type (Vec B n) and evaluates to a value of type (Vec (Pair A B) n),
+;; the result of zipping the first and second arguments.
+
+; hmmm the base case should be able to take a (Vec A 1) and (Vec B 1) and
+; use head to construct a (Vec (Pair A B) 1)
+;
+; note: base does _NOT_ take an ind-Nat parameter, it's just implied for 0
+;
+(claim zip-base
+    (Pi ((A U) (B U))
+        (-> (Vec A 1) (Vec B 1) (Vec (Pair A B) 1))))
+(define zip-base
+    (lambda (A B)
+        (lambda (x y)
+            (vec:: (cons (head x) (head y)) vecnil))))
+'--------------------------------test-zip-base
+(zip-base Atom Nat)
+((zip-base Atom Nat) (vec:: 'one vecnil) (vec:: 1 vecnil)) ; should result in a (vec:: (cons 'one 1) 1)
+
+(claim zip-mot (-> U U Nat U))
+(define zip-mot
+    (lambda (A B)
+        (lambda (n)
+            (-> (Vec A (add1 n)) (Vec B (add1 n))
+                (Vec (Pair A B) (add1 n))))))
+'--------------------------------test-zip-mot
+(zip-mot Atom Nat 1)
+(zip-mot Atom Nat 2)
+
+(claim zip-step
+    (Pi ((A U) (B U) (k Nat))
+        (-> (zip-mot A B k) (zip-mot A B (add1 k)))))
+(define zip-step
+    (lambda (A B k)
+        (lambda (subfunc)       ; (-> (Vec Atom 1) (Vec Nat 1) (Vec (Pair Atom Nat) 1)
+            (lambda (x y)       ; (-> (Vec Atom 2) (Vec Nat 2) (Vec (Pair Atom Nat) 2)
+                (vec:: (cons (head x) (head y)) (subfunc (tail x) (tail y)))))))
+'--------------------------------test-zip-step
+(zip-step Atom Nat 1)
+
+(claim zip
+    (Pi ((A U) (B U) (n Nat))
+        (-> (Vec A (add1 n)) (Vec B (add1 n)) (Vec (Pair A B) (add1 n)))));
+
+(define zip
+    (lambda (A B n)
+        (ind-Nat n
+            (zip-mot A B)
+            (zip-base A B)
+            (zip-step A B)
+        )))
+
+'--------------------------------test-zip
+(zip Atom Atom 0)
+(zip Atom Atom 0 (vec:: 'A vecnil) (vec:: 'A vecnil))
+(zip Atom Atom 1 (vec:: 'A (vec:: 'B vecnil)) (vec:: 'A (vec:: 'B vecnil)))
+(zip Atom Nat 2 (vec:: 'A (vec:: 'B (vec:: 'C vecnil))) (vec:: 1 (vec:: 2 (vec:: 3 vecnil))))
+
+;; Exercise 7.1
+;;
+;; Define a function called append that takes an argument of type (Vec E n) and an
+;; argument of type (Vect E m) and evaluates to a value of type (Vec (+ n m)), the
+;; result of appending the elements of the second argument to the end of the first.
+
+(claim append
+       (Π ([E U]
+           [n Nat]
+           [m Nat])
+          (-> (Vec E n) (Vec E m)
+              (Vec E (+ n m)))))
+
+;; Exercise 7.2
+;;
+;; Define a function called drop-last-k that takes an argument of type (Vec E ?) and
+;; evaluates to a value of type (Vec E ?), the result of dropping the last k elements
+;; from the first argument.
+;;
+;; NB: The type of the function should guarantee that we can't drop more elements
+;; than there are in the first argument.
