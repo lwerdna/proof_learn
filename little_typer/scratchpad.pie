@@ -214,21 +214,49 @@
             step-peas
         )))
 
+'--------------------------------testing-peas
+
 (peas 0)
 (peas 1)
 (peas 8)
 (peas 16)
 
-; get-last?
+(peas 8)
+(tail (peas 8))
+(tail (tail (peas 8)))
+(tail (tail (tail (peas 8))))
 
-; give the type for current count
+; WRITE LAST (get the last element of a Vec)
 
-; given a Type and Nat, return a Type
+; base is used when ind-Nat supplies 0
+
+; return the base type we've decided, a function
+; base case: a list of length 1's last element is its head
+;
+; input      output
+; -----      ------
+; Atom       (-> (Vec Atom 1) Atom)
+; Nat        (-> (Vec Nat 1) Nat)
+(claim base-last
+    (Pi ((E U))
+        (-> (Vec E 1) E)
+    ))
+(define base-last
+    (lambda (E)
+        (lambda (es)
+            (head es))))
+'--------------------------------testing-base-last
+(base-last Atom)
+(base-last Nat)
+
+; given a Type and Nat [1,2,3,...], return a Type for step
+;
+; input  ind-Nat    output
+; -----  -------    ------
+; Atom   1          (-> (Vec Atom 2) Atom)
+; Atom   2          (-> (Vec Atom 3) Atom)
+; Atom   3          (-> (Vec Atom 4) Atom)
 (claim mot-last (-> U Nat U))
-; given a Type E and Nat k, return a function mapping (Vec E (add1 k)) to E
-; examples return values:
-; (-> (Vec Nat 5) Nat)
-; (-> (Vec Atom 3) Nat)
 (define mot-last
     (lambda (E)
         (lambda (k)
@@ -236,32 +264,53 @@
                 E
             ))))
 
-(mot-last Atom 4)
-(mot-last Nat 4)
-(mot-last (Pair Atom Atom) 4)
+'--------------------------------testing-mot-last
+(mot-last Atom 0)
+(mot-last Atom 1)
+(mot-last Atom 2)
+(-> (mot-last Atom 0) (mot-last Atom 1))
+;(the U
+;  (→ (→ (Vec Atom 1)    the function whose input is type (-> (Vec Atom 1) Atom)
+;        Atom)             returns a function whose input type is (Vec Atom 2)
+;      (Vec Atom 2)          returns an Atom
+;    Atom))
 
+; convert a function returning the last of a (Vec E k)
+;      to a function returning the last of a (Vec E (add1 k))
+;
+; (mot-last E k) is the input type to step-last
+; (mot-last E (add1 k)) is the output type of step-last
+;
+;                             type
+;          --------------------------------------------------
+; ind-Nat  input                       output
+; -------  ----------------------      ----------------------
+; 0        (-> (Vec Atom 1) Atom)  ->  (-> (Vec Atom 2) Atom)
+; 1        (-> (Vec Atom 2) Atom)  ->  (-> (Vec Atom 3) Atom)
+; 2        (-> (Vec Atom 3) Atom)  ->  (-> (Vec Atom 4) Atom)
+;
 (claim step-last
-    (Pi ((E U)
+    (Pi ((E U)      ; like Atom, Nat
         (k Nat))
-        (-> (mot-last E k) (mot-last E (add1 k)))))
-        ;(-> (-> (Vec E k) E) (-> (Vec E (add1 k)) E) )))
-
+        (-> (mot-last E k) (mot-last E (add1 k)))
+        ;(-> (-> (Vec E (add1 k)) E)
+        ;    (-> (Vec E (add1 (add1 k))) E)
+        ;)
+    )
+)
 (define step-last
     (lambda (E k)
-        (lambda (subresult)
-            (lambda (es)
-                (subresult (tail es))))))
-            
+        (lambda (subfunction)                   ; subfunction is a (-> (Vec E (add1 k)) E)
+            (lambda (es)                        ;          es is a (-> (Vec E (add1 (add1 k)) E)
+                (subfunction (tail es))))))     ;
+'--------------------------------testing-step-last
+(step-last Atom 1)
+(step-last Atom 2)
+(step-last Atom 3)
 
-(claim base-last                ; base value we're returning is a FUNCTION
-    (Pi ((E U))                 ; <-- parameterized type
-        (-> (Vec E (add1 zero))
-            E)))
-(define base-last
-    (lambda (E)
-        (lambda (es)
-            (head es))))
-
+'--------------------------------testing-funky
+;(step-last (Vec Atom 0)
+;(base-last Atom)
 
 (claim last ; takes a Type, a Nat, and returns
     (Pi ((E U) (l Nat))
@@ -276,5 +325,22 @@
         )
     )
 )
-
+'--------------------------------testing-last
 (last Atom 2 (vec:: 'A (vec:: 'B (vec:: 'C vecnil))))
+
+; could a much simpler last have been made by detecting when the k is 0?
+
+;(claim base-lastB
+;    (Pi ((E U))
+;    
+;
+;(claim lastB (-> U Nat U))
+;(define lastB
+;    (lambda (E k)
+;        (ind-Nat l
+;            (mot-lastB E)
+;            (base-lastB E)
+;            (step-lastB E)
+;        )
+;    )
+;)
