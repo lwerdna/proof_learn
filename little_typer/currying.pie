@@ -84,3 +84,22 @@
 ; with  2 parameters, return (-> Nat Nat)
 ;
 
+; consider (f x)
+; view#1: f is a function, processes x, returns some value
+; view#2: f is a function, returns some function, which processes x, returns some value
+; are these the same?
+(claim double (-> Nat Nat))
+(define double
+    (lambda (x)
+        (add x x)))
+(check-same Nat (double 0) 0)
+(check-same Nat (double 1) 2)
+(check-same Nat (double 2) 4)
+
+(claim double_maker (-> Atom (-> Nat Nat)))
+(define double_maker
+    (lambda (_) ; at least one param is required
+        double))
+(check-same Nat (double_maker 'dummy 0) 0)
+(check-same Nat (double_maker 'dummy 1) 2)
+(check-same Nat (double_maker 'dummy 2) 4)

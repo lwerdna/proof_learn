@@ -27,24 +27,25 @@
 ;
 (claim zip-base
     (Pi ((A U) (B U))
-        (-> (Vec A 1) (Vec B 1) (Vec (Pair A B) 1))))
+        (-> (Vec A 0) (Vec B 0) (Vec (Pair A B) 0))))
 (define zip-base
     (lambda (A B)
         (lambda (x y)
-            (vec:: (cons (head x) (head y)) vecnil))))
+            vecnil)))
 '--------------------------------test-zip-base
 (zip-base Atom Nat)
-((zip-base Atom Nat) (vec:: 'one vecnil) (vec:: 1 vecnil)) ; should result in a (vec:: (cons 'one 1) 1)
 
+; (motive (...) 0) returns input type of (step (...) 1)
+; (motive (...) 1) returns output type of (step (...) 1)
 (claim zip-mot (-> U U Nat U))
 (define zip-mot
     (lambda (A B)
         (lambda (n)
-            (-> (Vec A (add1 n)) (Vec B (add1 n))
-                (Vec (Pair A B) (add1 n))))))
+            (-> (Vec A n) (Vec B n)
+                (Vec (Pair A B) n)))))
 '--------------------------------test-zip-mot
+(zip-mot Atom Nat 0) ; should describe (zip-base Atom Nat)
 (zip-mot Atom Nat 1)
-(zip-mot Atom Nat 2)
 
 (claim zip-step
     (Pi ((A U) (B U) (k Nat))
@@ -59,7 +60,7 @@
 
 (claim zip
     (Pi ((A U) (B U) (n Nat))
-        (-> (Vec A (add1 n)) (Vec B (add1 n)) (Vec (Pair A B) (add1 n)))));
+        (-> (Vec A n) (Vec B n) (Vec (Pair A B) n))));
 
 (define zip
     (lambda (A B n)
@@ -70,10 +71,11 @@
         )))
 
 '--------------------------------test-zip
-(zip Atom Atom 0)
-(zip Atom Atom 0 (vec:: 'A vecnil) (vec:: 'A vecnil))
-(zip Atom Atom 1 (vec:: 'A (vec:: 'B vecnil)) (vec:: 'A (vec:: 'B vecnil)))
-(zip Atom Nat 2 (vec:: 'A (vec:: 'B (vec:: 'C vecnil))) (vec:: 1 (vec:: 2 (vec:: 3 vecnil))))
+;(zip Atom Atom 0)
+;(zip Atom Atom 1)
+(zip Atom Atom 1 (vec:: 'A vecnil) (vec:: 'A vecnil))
+(zip Atom Atom 2 (vec:: 'A (vec:: 'B vecnil)) (vec:: 'A (vec:: 'B vecnil)))
+(zip Atom Nat 3 (vec:: 'A (vec:: 'B (vec:: 'C vecnil))) (vec:: 1 (vec:: 2 (vec:: 3 vecnil))))
 
 ;; Exercise 7.1
 ;;
