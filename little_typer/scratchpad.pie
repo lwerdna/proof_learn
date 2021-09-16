@@ -189,6 +189,9 @@
 (define mot-peas
     (lambda (k)
         (Vec Atom k))) ; function returns a type
+'--------------------------------testing-mot-peas
+(mot-peas 0) ; (Vec Atom 0)
+(mot-peas 1) ; (Vec Atom 1)
 
 ; (Vec Atom 0) -> (Vec Atom 1)
 ; (Vec Atom 1) -> (Vec Atom 2)
@@ -197,7 +200,7 @@
 (claim step-peas
     (Pi ((n Nat))
         (-> (mot-peas n) (mot-peas (add1 n))))) ; not only is step-peas's type dependent on n, it's
-                                                ; dependent on the outcoming of an expression involving n!
+                                                ; dependent on the outcome of an expression involving n!
 (define step-peas
     (lambda (n)
         (lambda (subresult)

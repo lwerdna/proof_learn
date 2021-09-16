@@ -1,18 +1,79 @@
 #lang pie
 
+;; START-PEAS
+(claim mot-peas
+    (-> Nat U)) ; function returns a type
+(define mot-peas
+    (lambda (k)
+        (Vec Atom k))) ; function returns a type
+'--------------------------------testing-mot-peas
+(mot-peas 0) ; (Vec Atom 0)
+(mot-peas 1) ; (Vec Atom 1)
+
+; (Vec Atom 0) -> (Vec Atom 1)
+; (Vec Atom 1) -> (Vec Atom 2)
+; (Vec Atom 2) -> (Vec Atom 3)
+; ...
+(claim step-peas
+    (Pi ((n Nat))
+        (-> (mot-peas n) (mot-peas (add1 n))))) ; not only is step-peas's type dependent on n, it's
+                                                ; dependent on the outcome of an expression involving n!
+(define step-peas
+    (lambda (n)
+        (lambda (subresult)
+            (vec:: 'pea subresult))))
+
+(claim peas
+    (Pi ((how-many-peas Nat))
+        (Vec Atom how-many-peas)))
+(define peas
+    (lambda (how-many-peas)
+        (ind-Nat how-many-peas
+            mot-peas
+            vecnil
+            step-peas
+        )))
+
+;; END-PEAS
+
 ;; Exercises on Vec and ind-Nat from Chapters 6 and 7 of The Little
 ;; Typer
 
 (claim +
-       (-> Nat Nat
-           Nat))
-
+    (-> Nat Nat
+        Nat))
 (define +
-  (λ (a b)
-    (rec-Nat a
-             b
-             (λ (a-k b+a-k)
-               (add1 b+a-k)))))
+    (lambda (a b)
+        (rec-Nat a
+            b
+            (lambda (_ subresult) (add1 subresult)))))
+'--------------------------------test-plus
+(+ 0 0)
+(+ 1 2)
+(+ 2 4)
+(+ 3 6)
+
+;; subtraction
+(claim sub1
+    (-> Nat Nat))
+(define sub1
+    (lambda (x)
+        (which-Nat x
+            0
+            (lambda (k) k))))
+(claim -
+    (-> Nat Nat
+        Nat))
+(define -
+    (lambda (a b)
+        (iter-Nat b
+            a
+            sub1))) ;
+(check-same Nat (- 1 4) 0)
+(check-same Nat (- 3 1) 2)
+(check-same Nat (- 0 9) 0)
+(check-same Nat (- 12 8) 4)
+(check-same Nat (- 6 5) 1)
 
 ;; Exercise 7.0
 ;;
@@ -80,15 +141,145 @@
 ;; Exercise 7.1
 ;;
 ;; Define a function called append that takes an argument of type (Vec E n) and an
-;; argument of type (Vect E m) and evaluates to a value of type (Vec (+ n m)), the
+;; argument of type (Vec E m) and evaluates to a value of type (Vec (+ n m)), the
 ;; result of appending the elements of the second argument to the end of the first.
 
-(claim append
-       (Π ([E U]
-           [n Nat]
-           [m Nat])
-          (-> (Vec E n) (Vec E m)
-              (Vec E (+ n m)))))
+;; custom exercise: append1
+
+(claim append1-base
+    (Pi ((E U))
+        (-> E
+            (-> (Vec E 0)
+                (Vec E 1)))))
+(define append1-base
+    (lambda (E)
+        (lambda (elem input)
+            (vec:: elem vecnil))))
+'--------------------------------test-append-one-base
+(append1-base Atom 'Z)
+
+(claim append1-mot (-> U Nat U))
+(define append1-mot
+    (lambda (E i)
+        (-> (Vec E i) (Vec E (add1 i)))))
+'--------------------------------test-append-one-mot
+(append1-mot Atom 0)
+
+(claim append1-step
+    (Pi ((E U) (i Nat))
+        (-> (append1-mot E i) (append1-mot E (add1 i)))))
+(define append1-step
+    (lambda (E i)
+        (lambda (subfunc)
+            (lambda (input)
+                (vec:: (head input) (subfunc (tail input)))))))
+'--------------------------------test-append-one-step
+(append1-step Atom 1)
+
+(claim append1
+    (Pi ((E U) (n Nat))
+        (-> (Vec E n) E (Vec E (add1 n)))))
+(define append1
+    (lambda (E n)
+        (lambda (input newend)
+            (
+                (ind-Nat n
+                    (append1-mot E)
+                    (append1-base E newend)
+                    (append1-step E)
+                )
+                input
+            ))))
+'--------------------------------test-append-one
+(append1 Atom 0 vecnil 'Z)
+(append1 Atom 1 (vec:: 'A vecnil) 'Z)
+(append1 Atom 2 (vec:: 'A (vec:: 'B vecnil)) 'Z)
+(append1 Atom 3 (vec:: 'A (vec:: 'B (vec:: 'C vecnil))) 'Z)
+
+;; custom exercise: replicate vector
+
+(claim replicate-vec-mot
+    (-> U Nat U))
+(define replicate-vec-mot
+    (lambda (E n)
+        (Vec E n)))
+'--------------------------------test-replicate-vec-mot
+(replicate-vec-mot Atom 0)
+(replicate-vec-mot Atom 1)
+
+(claim replicate-vec-step
+    (Pi ((E U) (seed E) (l Nat))
+        (->
+            (replicate-vec-mot E l)
+            (replicate-vec-mot E (add1 l))
+        )))
+(define replicate-vec-step
+    (lambda (E seed l)
+        (lambda (subresult) ; (Vec Atom <l>)
+            (vec:: seed subresult))))
+'--------------------------------test-replicate-vec-step
+(replicate-vec-step Atom 'foo 0)
+
+(claim replicate-vec
+    (Pi ((E U) (seed E) (l Nat))
+        (-> E seed Nat (Vec E l))))
+(define replicate-vec
+    (lambda (E seed l)
+        (lambda (
+
+
+
+; base is a function that takes an empty vector and other vector and returns the other vector
+; [], [A B C] returns [A B C]
+(claim append-base
+    (Pi ((E U) (m Nat))
+        (-> (Vec E m) (Vec E 0)
+            (Vec E m))))
+(define append-base
+    (lambda (E m)
+        (lambda (lhs rhs) lhs)))
+'--------------------------------test-append-base
+(append-base Atom 10)
+
+(claim append-mot
+    (-> U Nat Nat Nat U))
+(define append-mot
+    (lambda (E m n i)
+        (-> (Vec E (- (+ m n) i))
+            (Vec E i)
+            (Vec E (+ n m)))))
+'--------------------------------test-append-mot
+(append-mot Atom 3 3 0) ; (-> (Vec Atom 6) (Vec Atom 0) (Vec Atom 6))
+(append-mot Atom 3 3 1) ; (-> (Vec Atom 5) (Vec Atom 1) (Vec Atom 6))
+(append-mot Atom 3 3 2) ; (-> (Vec Atom 4) (Vec Atom 2) (Vec Atom 6))
+(append-mot Atom 3 3 3) ; (-> (Vec Atom 3) (Vec Atom 3) (Vec Atom 6))
+
+;(claim dummy
+;    (Pi ((E U) (m Nat) (n Nat) (i Nat))
+;        (-> Nat (append-mot E m n i))))
+;
+;(define dummy
+;    (lambda (E m n i)
+;        (lambda (num)
+;            (lambda (a b)
+;                (a
+;            )
+;        )))
+
+(claim append-step
+    (Pi ((E U) (m Nat) (n Nat) (i Nat))
+        (-> (append-mot E m n i) (append-mot E m n (add1 i)))))
+
+(define append-step
+    (lambda (E m n i)
+        (lambda (subfunc)
+            (lambda (a b)
+                (subfunc 
+                    ;(append1 E (- (+ m n) i) a (head b))
+                    ;(append1 E (- (+ m n) i) a (head b))
+                    (vec:: (head b) a)
+                    (tail b)
+                )))))
 
 ;; Exercise 7.2
 ;;
