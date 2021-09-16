@@ -1,0 +1,51 @@
+;; custom exercise: append1
+
+(claim append1-base
+    (Pi ((E U))
+        (-> E
+            (-> (Vec E 0)
+                (Vec E 1)))))
+(define append1-base
+    (lambda (E)
+        (lambda (elem input)
+            (vec:: elem vecnil))))
+'--------------------------------test-append-one-base
+(append1-base Atom 'Z)
+
+(claim append1-mot (-> U Nat U))
+(define append1-mot
+    (lambda (E i)
+        (-> (Vec E i) (Vec E (add1 i)))))
+'--------------------------------test-append-one-mot
+(append1-mot Atom 0)
+
+(claim append1-step
+    (Pi ((E U) (i Nat))
+        (-> (append1-mot E i) (append1-mot E (add1 i)))))
+(define append1-step
+    (lambda (E i)
+        (lambda (subfunc)
+            (lambda (input)
+                (vec:: (head input) (subfunc (tail input)))))))
+'--------------------------------test-append-one-step
+(append1-step Atom 1)
+
+(claim append1
+    (Pi ((E U) (n Nat))
+        (-> (Vec E n) E (Vec E (add1 n)))))
+(define append1
+    (lambda (E n)
+        (lambda (input newend)
+            (
+                (ind-Nat n
+                    (append1-mot E)
+                    (append1-base E newend)
+                    (append1-step E)
+                )
+                input
+            ))))
+'--------------------------------test-append-one
+(append1 Atom 0 vecnil 'Z)
+(append1 Atom 1 (vec:: 'A vecnil) 'Z)
+(append1 Atom 2 (vec:: 'A (vec:: 'B vecnil)) 'Z)
+(append1 Atom 3 (vec:: 'A (vec:: 'B (vec:: 'C vecnil))) 'Z)

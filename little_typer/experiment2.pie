@@ -1,0 +1,40 @@
+#lang pie
+
+;; custom exercise: drop front i elementsc
+
+;------------------------------------------------------------------------------
+; <STANDARD_INCLUDES>
+;------------------------------------------------------------------------------
+(claim +
+    (-> Nat Nat
+        Nat))
+(define +
+    (lambda (a b)
+        (rec-Nat a
+            b
+            (lambda (_ subresult) (add1 subresult)))))
+
+;------------------------------------------------------------------------------
+; </STANDARD_INCLUDES>
+;------------------------------------------------------------------------------
+
+(claim drop-first-k
+    (Pi ((T U) (l1 Nat) (k Nat) (l2 Nat))
+        (-> (Vec T (+ l1 k)) Nat Nat (Vec T l2))))
+
+(claim drop-first-k-motive
+    (-> U Nat Nat U))
+(define drop-first-k-motive
+    (lambda (E result_len i)
+        (-> (Vec E (add1 (+ l2 i)))
+            (Vec E (+ l2 i))
+        )
+    ))
+(drop-first-k-motive Atom 0)
+
+;(tail (the (Vec Atom 5) (vec:: 'A (vec:: 'B (vec:: 'C (vec:: 'D (vec:: 'E vecnil)))))))
+;; (tail (the (Vec Atom 0) vecnil))
+
+;
+;(claim drop-first-k-mot
+;    (U 

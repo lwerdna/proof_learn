@@ -352,3 +352,13 @@
 ;        )
 ;    )
 ;)
+
+(claim foo
+    (Pi ((a Nat) (b Nat)) Nat)
+)
+
+(define foo
+    (lambda (a b)
+        3))
+
+(foo 9 10)

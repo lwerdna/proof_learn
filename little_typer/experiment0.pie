@@ -1,0 +1,36 @@
+#lang pie
+
+(claim sub1
+    (-> Nat Nat))
+(define sub1
+    (lambda (x)
+        (which-Nat x
+            0
+            (lambda (k) k))))
+
+; How does the biasing of an input parameter impose conditions on it?
+;
+; See 6.37
+; We avoid attempting to define a non-total function by using a more specific type to rule out unwanted arguments.
+
+(claim first-worker
+    (Pi ((T U) (version Nat))
+        (-> (Vec T (add1 version)) ; the i'th version takes vectors length i+1
+            T)))
+
+(define first-worker
+    (lambda (E l)
+        (lambda (es)
+            (head es))))
+
+(claim first
+    (Pi ((E U) (length Nat))
+        (-> (Vec E length) E)))
+
+(define first
+    (lambda (E length input)
+        (first-worker E (sub1 length) input))) ; length vectors call version length-1
+
+(first-worker Atom 3 (vec:: 'A (vec:: 'B (vec:: 'C vecnil))))
+
+

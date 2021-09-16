@@ -1,0 +1,59 @@
+#lang pie
+
+; drop-first-k
+
+(claim +
+    (-> Nat Nat
+        Nat))
+(define +
+    (lambda (a b)
+        (rec-Nat a
+            b
+            (lambda (_ subresult) (add1 subresult)))))
+
+(claim sub1
+    (-> Nat Nat))
+(define sub1
+    (lambda (x)
+        (which-Nat x
+            0
+            (lambda (k) k))))
+(claim -
+    (-> Nat Nat
+        Nat))
+(define -
+    (lambda (a b)
+        (iter-Nat b
+            a
+            sub1)));
+
+;; custom exercise: drop front i elements
+
+(claim drop-first-k-motive
+    (-> U Nat Nat U))
+(define drop-first-k-motive
+    (lambda (T l i)
+        (Vec T (- l i))))
+'--------------------------------test-drop-first-k-motive
+(drop-first-k-motive Atom 10 0) ; step0 on (Vec Atom 10)
+(drop-first-k-motive Atom 10 1) ; step1 on (Vec Atom 10)
+
+(claim drop-first-k-step
+    (Pi ((T U) (l Nat) (i Nat))
+        (-> (drop-first-k-motive T l i) (drop-first-k-motive T l (add1 i)))))
+(define drop-first-k-step
+    (lambda (T l i)
+        (lambda (subresult)
+            (tail subresult))))
+;'--------------------------------drop-first-k-step
+;(drop-first-k-step Atom 10
+
+(claim drop-first-k
+    (Pi ((T U) (l Nat) (k Nat))
+        (->
+            (Vec T (+ l k))
+            Nat
+            Nat
+            (Vec T (- l k))
+        )))
+

@@ -1,0 +1,42 @@
+;; custom exercise: replicate vector
+
+(claim vec-replicate-mot
+    (-> U Nat U))
+(define vec-replicate-mot
+    (lambda (E n)
+        (Vec E n)))
+'--------------------------------test-vec-replicate-mot
+(vec-replicate-mot Atom 0)
+(vec-replicate-mot Atom 1)
+
+(claim vec-replicate-step
+    (Pi ((E U) (seed E) (l Nat))
+        (->
+            (vec-replicate-mot E l)
+            (vec-replicate-mot E (add1 l))
+        )))
+(define vec-replicate-step
+    (lambda (E seed l)
+        (lambda (subresult) ; (Vec Atom <l>)
+            (vec:: seed subresult))))
+'--------------------------------test-vec-replicate-step
+(vec-replicate-step Atom 'foo 0)
+
+(claim vec-replicate
+    (Pi ((E U) (seed E) (n Nat))
+        (Vec E n)))
+(define vec-replicate
+    (lambda (E seed n)
+        (ind-Nat n
+            (vec-replicate-mot E)
+            (the (Vec E 0) vecnil)
+            (vec-replicate-step E seed)
+        )
+    )
+)
+'--------------------------------test-vec-replicate
+(vec-replicate Atom 'foo 0)
+(vec-replicate Atom 'foo 1)
+(vec-replicate Atom 'foo 4)
+(vec-replicate Nat 6 3)
+

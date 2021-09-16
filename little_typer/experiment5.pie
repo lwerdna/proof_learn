@@ -1,6 +1,6 @@
 #lang pie
 
-; demonstrate currying and partial evaluation
+; currying
 
 ; add using iter-Nat
 

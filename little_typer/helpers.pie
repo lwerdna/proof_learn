@@ -1,0 +1,27 @@
+#lang pie
+
+(claim +
+    (-> Nat Nat
+        Nat))
+(define +
+    (lambda (a b)
+        (rec-Nat a
+            b
+            (lambda (_ subresult) (add1 subresult)))))
+
+(claim sub1
+    (-> Nat Nat))
+(define sub1
+    (lambda (x)
+        (which-Nat x
+            0
+            (lambda (k) k))))
+(claim -
+    (-> Nat Nat
+        Nat))
+(define -
+    (lambda (a b)
+        (iter-Nat b
+            a
+            sub1)));
+

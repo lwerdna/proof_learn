@@ -68,7 +68,7 @@
     (lambda (a b)
         (iter-Nat b
             a
-            sub1))) ;
+            sub1)));
 (check-same Nat (- 1 4) 0)
 (check-same Nat (- 3 1) 2)
 (check-same Nat (- 0 9) 0)
@@ -144,102 +144,20 @@
 ;; argument of type (Vec E m) and evaluates to a value of type (Vec (+ n m)), the
 ;; result of appending the elements of the second argument to the end of the first.
 
-;; custom exercise: append1
-
-(claim append1-base
-    (Pi ((E U))
-        (-> E
-            (-> (Vec E 0)
-                (Vec E 1)))))
-(define append1-base
-    (lambda (E)
-        (lambda (elem input)
-            (vec:: elem vecnil))))
-'--------------------------------test-append-one-base
-(append1-base Atom 'Z)
-
-(claim append1-mot (-> U Nat U))
-(define append1-mot
-    (lambda (E i)
-        (-> (Vec E i) (Vec E (add1 i)))))
-'--------------------------------test-append-one-mot
-(append1-mot Atom 0)
-
-(claim append1-step
-    (Pi ((E U) (i Nat))
-        (-> (append1-mot E i) (append1-mot E (add1 i)))))
-(define append1-step
-    (lambda (E i)
-        (lambda (subfunc)
-            (lambda (input)
-                (vec:: (head input) (subfunc (tail input)))))))
-'--------------------------------test-append-one-step
-(append1-step Atom 1)
-
-(claim append1
-    (Pi ((E U) (n Nat))
-        (-> (Vec E n) E (Vec E (add1 n)))))
-(define append1
-    (lambda (E n)
-        (lambda (input newend)
-            (
-                (ind-Nat n
-                    (append1-mot E)
-                    (append1-base E newend)
-                    (append1-step E)
-                )
-                input
-            ))))
-'--------------------------------test-append-one
-(append1 Atom 0 vecnil 'Z)
-(append1 Atom 1 (vec:: 'A vecnil) 'Z)
-(append1 Atom 2 (vec:: 'A (vec:: 'B vecnil)) 'Z)
-(append1 Atom 3 (vec:: 'A (vec:: 'B (vec:: 'C vecnil))) 'Z)
-
-;; custom exercise: replicate vector
-
-(claim replicate-vec-mot
-    (-> U Nat U))
-(define replicate-vec-mot
-    (lambda (E n)
-        (Vec E n)))
-'--------------------------------test-replicate-vec-mot
-(replicate-vec-mot Atom 0)
-(replicate-vec-mot Atom 1)
-
-(claim replicate-vec-step
-    (Pi ((E U) (seed E) (l Nat))
-        (->
-            (replicate-vec-mot E l)
-            (replicate-vec-mot E (add1 l))
-        )))
-(define replicate-vec-step
-    (lambda (E seed l)
-        (lambda (subresult) ; (Vec Atom <l>)
-            (vec:: seed subresult))))
-'--------------------------------test-replicate-vec-step
-(replicate-vec-step Atom 'foo 0)
-
-(claim replicate-vec
-    (Pi ((E U) (seed E) (l Nat))
-        (-> E seed Nat (Vec E l))))
-(define replicate-vec
-    (lambda (E seed l)
-        (lambda (
-
-
+; [A B C] [D E F G H I J]
+; [B C]   (
 
 ; base is a function that takes an empty vector and other vector and returns the other vector
-; [], [A B C] returns [A B C]
+; [] [A B C] returns [A B C]
 (claim append-base
-    (Pi ((E U) (m Nat))
-        (-> (Vec E m) (Vec E 0)
-            (Vec E m))))
+    (Pi ((E U) (m Nat) (n Nat))
+        (-> (Vec E 0) (Vec E n)
+            (Vec E n))))
 (define append-base
-    (lambda (E m)
-        (lambda (lhs rhs) lhs)))
+    (lambda (E m n)
+        (lambda (lhs rhs) rhs)))
 '--------------------------------test-append-base
-(append-base Atom 10)
+(append-base Atom 7 3)
 
 (claim append-mot
     (-> U Nat Nat Nat U))
@@ -253,18 +171,6 @@
 (append-mot Atom 3 3 1) ; (-> (Vec Atom 5) (Vec Atom 1) (Vec Atom 6))
 (append-mot Atom 3 3 2) ; (-> (Vec Atom 4) (Vec Atom 2) (Vec Atom 6))
 (append-mot Atom 3 3 3) ; (-> (Vec Atom 3) (Vec Atom 3) (Vec Atom 6))
-
-;(claim dummy
-;    (Pi ((E U) (m Nat) (n Nat) (i Nat))
-;        (-> Nat (append-mot E m n i))))
-;
-;(define dummy
-;    (lambda (E m n i)
-;        (lambda (num)
-;            (lambda (a b)
-;                (a
-;            )
-;        )))
 
 (claim append-step
     (Pi ((E U) (m Nat) (n Nat) (i Nat))
