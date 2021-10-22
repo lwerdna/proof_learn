@@ -1,0 +1,5 @@
+=/2 is predicate checking for equality
+\=/2 is predicate for checking inequality
+[foo]. loads file foo.pl
+trace. turn trace on
+notrace. turn trace off
