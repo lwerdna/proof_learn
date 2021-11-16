@@ -31,7 +31,7 @@ Proof.
  apply A_implies_B in proof_of_A as B_holds.
  exact B_holds.
  Show Proof.
- Qed.
+Qed.
 
 (* foward proofs build stuff in the context until the goal is reached *)
 (* backwards proofs changes the subgoal *)
@@ -78,6 +78,7 @@ Show Proof.
 Qed.
 
 (* according to tutorial, most Coq proofs are backwards *)
+
 (* Capital-F "False" is Prop with no proofs
  "False" should be read "Never Provable" *)
 (* Capital-T "True" is Prop that has single proof called I
@@ -94,6 +95,18 @@ Qed.
 
 (* Definition <X> := <Y>. says that X and Y are interchangeable
 *)
+Check False. (* False is type Prop *)
+
+Inductive MyPropType : Prop := MyPropType1 | MyPropType2.
+
+Check MyPropType1.
+Check MyPropType.
+Inductive TTrue:Prop := LALA:TTrue.
+Print bool.
+
+Inductive WhatWhat:bool := LarCar.
+
+Print False. (* False is ... *)
 Locate "~". (* "~ x" := (not x) *)
 Print not. (* fun A:Prop => A -> False *)
 Theorem False_cannot_be_proven : ~False.
@@ -107,3 +120,16 @@ Proof.
 Qed.
 
 
+
+Check False.
+Theorem False_cannot_be_proven' : ~False.
+Proof.
+  (* since ~False is (not False) is (False) *)
+  intros A:False.
+  unfold not. (* goal ~False
+                 not False       equivalent to above
+                 False -> False  (not False => False) *)
+
+  intros proof_of_False.
+  exact proof_of_False.
+Qed.

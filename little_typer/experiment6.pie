@@ -1,7 +1,17 @@
 #lang pie
 
-; drop-first-k
+; drop-first-k, technique #1
 
+; takes three arguments:
+; input: vector from which elements will be dropped
+;     k: amount to drop
+;    l2: vector end length (after drop)
+;
+; NB: the input vector length is implied in (+ k l2)
+
+;------------------------------------------------------------------------------
+; <STANDARD_INCLUDES>
+;------------------------------------------------------------------------------
 (claim +
     (-> Nat Nat
         Nat))
@@ -11,49 +21,35 @@
             b
             (lambda (_ subresult) (add1 subresult)))))
 
-(claim sub1
-    (-> Nat Nat))
-(define sub1
-    (lambda (x)
-        (which-Nat x
-            0
-            (lambda (k) k))))
-(claim -
-    (-> Nat Nat
-        Nat))
-(define -
-    (lambda (a b)
-        (iter-Nat b
-            a
-            sub1)));
-
-;; custom exercise: drop front i elements
+;------------------------------------------------------------------------------
+; </STANDARD_INCLUDES>
+;------------------------------------------------------------------------------
 
 (claim drop-first-k-motive
     (-> U Nat Nat U))
 (define drop-first-k-motive
-    (lambda (T l i)
-        (Vec T (- l i))))
+    (lambda (T l2 i)
+        (-> (Vec T (+ l2 i))
+            (Vec T l2)
+        )))
 '--------------------------------test-drop-first-k-motive
-(drop-first-k-motive Atom 10 0) ; step0 on (Vec Atom 10)
-(drop-first-k-motive Atom 10 1) ; step1 on (Vec Atom 10)
+(drop-first-k-motive Atom 3 0) ; when result length 3, type at 0th step
+(drop-first-k-motive Atom 3 1) ; when result length 3, type at 1st step
+(drop-first-k-motive Atom 3 2) ; when result length 3, type at 2nd step
 
 (claim drop-first-k-step
-    (Pi ((T U) (l Nat) (i Nat))
-        (-> (drop-first-k-motive T l i) (drop-first-k-motive T l (add1 i)))))
+    (Pi ((T U) (l2 Nat) (i Nat))
+        (-> (drop-first-k-motive T l2 i)
+            (drop-first-k-motive T l2 (add1 i))
+        )))
 (define drop-first-k-step
-    (lambda (T l i)
-        (lambda (subresult)
-            (tail subresult))))
-;'--------------------------------drop-first-k-step
+    (lambda (T l2 i)
+        (lambda (subfunction)
+            (lambda (input)
+                (subfunction
+                    (tail input))
+            ))))
+--------------------------------drop-first-k-step
 ;(drop-first-k-step Atom 10
 
-(claim drop-first-k
-    (Pi ((T U) (l Nat) (k Nat))
-        (->
-            (Vec T (+ l k))
-            Nat
-            Nat
-            (Vec T (- l k))
-        )))
 
