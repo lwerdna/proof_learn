@@ -59,7 +59,7 @@ def tokenize(line):
 	i = 0
 	while i < len(chars):
 		c = chars[i]
-		if c == '\\':
+		if c in ['\\', 'λ']:
 			tokens.append((TID.LAMBDA,'\\'))
 			i += 1
 		elif c.isspace():

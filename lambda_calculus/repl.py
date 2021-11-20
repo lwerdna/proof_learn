@@ -12,7 +12,7 @@ from parser import ParserException
 
 single_step = True # evaluate and print one reduction step at a time
 single_step_max = 32 # None or 0 means no limit, else stop after
-auto_reduce = True # automatically attempt reduction on entered expressions
+auto_reduce = False # automatically attempt reduction on entered expressions
 draw_enabled = True
 
 RED = '\x1B[31m'
@@ -66,7 +66,7 @@ def draw_graphviz(term, hlnode=None, fname=None):
     for node in filter(lambda x: isinstance(x, VariableNode) and x.binding, nodes):
         src = 'obj_%d' % id(node)
         dst = 'obj_%d' % id(node.binding)
-        dot += '\t"%s" -> "%s" [style=dashed, color="grey"]' % (src, dst)
+        dot += '\t"%s" -> "%s" [style=dashed, color="grey"]' % (dst, src)
 
     dot += '}\n'
 
@@ -102,16 +102,19 @@ if __name__ == '__main__':
             # draw
             if line[0:5] in ['draw ', 'DRAW ']:
                 term = to_tree(line[5:])
-                print(term.str_tree())
                 target = reducible(term)
+                print(term.str_tree(target))
                 draw_graphviz(term, target)
                 os.system('open /tmp/tmp.png')
                 continue
 
-            if line[0:8] == 'reduce1 ':
-                term = to_tree(line[8:])
-                term = reduce_step(term)
-                print(term.str_tree())
+            if re.match(r'^reduce\d+ ', line):
+                (times, term_str) = re.match(r'^reduce(\d+) (.*)$', line).group(1,2)
+                term = to_tree(term_str)
+                for i in range(int(times)):
+                    term = reduce_step(term)
+                target = reducible(term)
+                print(term.str_tree(target))
                 print(str(term))
                 continue
 
@@ -194,6 +197,11 @@ if __name__ == '__main__':
 
                     print('making movie: /tmp/movie.gif')
                     os.system('convert -delay 100 -coalesce /tmp/step*.png -loop 0 /tmp/movie.gif')
+
+            # print it out
+            target = reducible(term)
+            print(term.str_tree(target))
+            print(str(term))
 
 #        while 1:
 #            #print('target is: %s' % target.str_line())
