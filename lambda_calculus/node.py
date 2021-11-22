@@ -72,7 +72,7 @@ class VariableNode(TermNode):
 
         (indent_here, _) = self.compute_indent_strings(indent, last_child)
         #return '%sVAR "%s"%s%s' % (indent_here, self.name, ' bound=%d'%self.binding.id if self.binding else '', mark)
-        return '%s"%s"%s' % (indent_here, self.name, mark)
+        return '%s%s%s' % (indent_here, self.name, mark)
         #return '%sVariable "%s"%s .parent=%s' % (indent, self.name, mark, self.parent)
 
 class AbstractionNode(TermNode):
@@ -92,7 +92,8 @@ class AbstractionNode(TermNode):
         mark = ' <--' if self is node_hl else ''
         (indent_here, indent_next) = self.compute_indent_strings(indent, last_child)
         #result = '%s%d.λ %s%s\n' % (indent_here, self.id, self.var_name, mark)
-        result = '%sλ%s%s\n' % (indent_here, self.var_name, mark)
+        #result = '%sλ%s%s\n' % (indent_here, self.var_name, mark)
+        result = '%sabst %s%s\n' % (indent_here, self.var_name, mark)
         #result = '%sAbstraction %s%s .parent=%s\n' % (indent, self.var_name, mark, self.parent)
         result += self.children[0].str_tree(node_hl, indent_next)
         return result
@@ -114,7 +115,7 @@ class ApplicationNode(TermNode):
         (indent_here, indent_next) = self.compute_indent_strings(indent, last_child)
 
         #result = '%s%s.APP%s\n' % (indent_here, self.id, mark)
-        result = '%sapply%s\n' % (indent_here, mark)
+        result = '%sappl%s\n' % (indent_here, mark)
 
         result += self.children[0].str_tree(node_hl, indent_next, False)
         result += '\n'

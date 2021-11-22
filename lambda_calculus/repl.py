@@ -6,7 +6,7 @@ from PIL import Image
 import readline
 
 import engine
-from engine import load_stdlib, reduce_step, to_tree, assign_macro, reducible
+from engine import load_stdlib, reduce_step, reduce_, to_tree, assign_macro, reducible
 from engine import VariableNode, AbstractionNode, ApplicationNode
 from parser import ParserException
 
@@ -33,7 +33,8 @@ def draw_graphviz(term, hlnode=None, fname=None):
     #print(term.str_tree())
 
     dot = 'digraph g {\n'
-    dot += '\tgraph [ordering="out"];'
+    #dot += '\tgraph [ordering="out"];'
+    dot += '\tgraph [];'
 
     def node2mark(node):
         if isinstance(node, VariableNode): return '%s' % (node.name)
@@ -119,6 +120,10 @@ if __name__ == '__main__':
                 continue
 
             # internal settings
+            if line == '.auto':
+                auto_reduce = not auto_reduce
+                info('changed automatic reduction to: %s' % auto_reduce)
+                continue
             if line == '.normal':
                 engine.reduction_strategy = 'normal'
                 info('changed evaluation strategy to normal (left-most, outer-most redex first)')
@@ -144,7 +149,7 @@ if __name__ == '__main__':
                     print('%s: %s' % (name, str(val)))
                 continue
             if line == '.settings':
-                info('automatic reduction: %s' % auto_reduce)
+                info('automatic reduction: %s (change with .auto)' % auto_reduce)
                 info(' reduction strategy: %s (change with .normal, .applicative)' % engine.reduction_strategy)
                 info('    single step max: %s (change with .ssmax <num>)' % single_step_max)
                 info('        single step: %s (change with .ss)' % single_step)
@@ -170,8 +175,12 @@ if __name__ == '__main__':
                             draw_graphviz(term, reducible(term), frame)
                             frames.append(frame)
                         step += 1
-                        if step > single_step_max: break
-                        if not reducible(term): break
+                        if step > single_step_max:
+                            print('reached max single step')
+                            break
+                        if not reducible(term):
+                            print('no longer reducible')
+                            break
                 else:
                     term = reduce_(term)
 
@@ -195,8 +204,9 @@ if __name__ == '__main__':
                         im2.close()
                         im1.save(path)
 
-                    print('making movie: /tmp/movie.gif')
-                    os.system('convert -delay 100 -coalesce /tmp/step*.png -loop 0 /tmp/movie.gif')
+                    print('making movie: /tmp/movie.gif from %s' % ' '.join(frames))
+                    cmd = 'convert -delay 100 -coalesce ' + ' '.join(frames) + ' -loop 0 /tmp/movie.gif'
+                    os.system(cmd)
 
             # print it out
             target = reducible(term)
