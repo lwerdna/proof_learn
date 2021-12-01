@@ -13,23 +13,23 @@ class TID(Enum):
 
 # a token is a tuple (TID, <val>) if value applies
 class TokenManager:
-	def __init__(self, tokenList):
-		self.tokenList = tokenList
+	def __init__(self, token_list):
+		self.token_list = token_list
 		self.i = 0
 
 	def reset(self):
 		self.i = 0
 
 	def peek(self, nAhead=0):
-		if (self.i + nAhead) >= len(self.tokenList):
+		if (self.i + nAhead) >= len(self.token_list):
 			return None
-		return self.tokenList[self.i + nAhead]
+		return self.token_list[self.i + nAhead]
 
-	def shift(self, tid_expected=None):
+	def consume(self, tid_expected=None):
 		if self.is_end():
 			raise Exception("token list is empty")
 
-		(tok_id, tok_val) = self.tokenList[self.i]
+		(tok_id, tok_val) = self.token_list[self.i]
 		self.i += 1
 
 		if tid_expected != None and tid_expected != tok_id:
@@ -42,15 +42,15 @@ class TokenManager:
 
 	def __str__(self):
 		result = []
-		for k in range(self.i, len(self.tokenList)):
-			(tok_type, tok_val) = self.tokenList[k]
+		for k in range(self.i, len(self.token_list)):
+			(tok_type, tok_val) = self.token_list[k]
 			result.append("%d: %s '%s'" % (k, tok_type.name, tok_val))
 		return "\n".join(result)
 
 	def str_line(self):
-		return ' '.join([x[1] for x in self.tokenList[self.i:]])
+		return ' '.join([x[1] for x in self.token_list[self.i:]])
 
-def tokenize(line):
+def tokenize(line:str):
 	tokens = []
 	line = line.rstrip()
 	chars = list(line)

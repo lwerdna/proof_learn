@@ -3,7 +3,6 @@
 import sys
 import copy
 from node import ApplicationNode, AbstractionNode, VariableNode
-from parser import parse_expr as ps
 from engine import equals, assign_macro, to_tree, reduce_, reduce_step, load_stdlib
 
 load_stdlib()
