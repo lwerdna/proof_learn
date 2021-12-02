@@ -12,6 +12,13 @@ class Variable(STLCNode):
     def __init__(self, name):
         self.name = name
 
+    # x:σ ∈ Γ
+    # -------
+    # Γ ⊢ x:σ
+    #
+    # if x has type σ in the environment, we know x has type σ
+    #
+    # this corresponds to a variable representing a proposition
     def type_assignment(self, environment):
         return environment.get(self.name, None)
 
@@ -25,6 +32,14 @@ class Abstraction(STLCNode):
         self.var_type = var_type
         self.body = body
 
+    #    Γ, x:σ ⊢ e:τ
+    # ------------------
+    # Γ ⊢ (λx:σ.e):(σ→τ)
+    #
+    # if, with an environment temporarily extended with x:σ, the body of an abstraction has type e:τ
+    # then the type of the abstraction is (σ→τ)
+    #
+    # this corresponds to the natural deduction move "assume x..."
     def type_assignment(self, environment):
         environment2 = dict(environment)
         environment2[self.var_name] = self.var_type
@@ -39,12 +54,20 @@ class Application(STLCNode):
         self.lhs = lhs
         self.rhs = rhs
 
+    #    Γ ⊢ a:σ→τ Τ ⊢ b:σ
+    # ----------------------
+    #       Γ ⊢ (a b):τ
+    #
+    # if a has type σ→τ and b has type σ then (a b) has type τ
+    #
+    # this corresponds to modus ponens
     def type_assignment(self, environment):
         ltype = self.lhs.type_assignment(environment)
         rtype = self.rhs.type_assignment(environment)
         if isinstance(ltype, FunctionType):
             if ltype.lhs == rtype:
                 return ltype.rhs
+        breakpoint()
 
     def __str__(self):
         return '(APP %s %s)' % (self.lhs, self.rhs)
@@ -67,6 +90,7 @@ class FunctionType(STLCNode):
         self.rhs = rhs
 
     def __str__(self):
+        #return '(→ %s %s)' % (self.lhs, self.rhs)
         return '(%s → %s)' % (self.lhs, self.rhs)
 
     def __eq__(self, other):
@@ -77,34 +101,34 @@ class FunctionType(STLCNode):
 # lispy like parser
 #------------------------------------------------------------------------------
 
-def lists_to_nodes(lol):
+def lists_to_nodes(lists):
     # lambda calculus core elements
-    if lol[0] in ['ABS', 'λ']:
-        assert len(lol) == 4
-        var_name = lol[1]
-        var_type = lists_to_nodes(lol[2])
-        body = lists_to_nodes(lol[3])
+    if lists[0] in ['ABS', 'λ']:
+        assert len(lists) == 4
+        var_name = lists[1]
+        var_type = lists_to_nodes(lists[2])
+        body = lists_to_nodes(lists[3])
         return Abstraction(var_name, var_type, body)
-    elif lol[0] == 'APP':
-        assert len(lol) == 3
-        lhs = lists_to_nodes(lol[1])
-        rhs = lists_to_nodes(lol[2])
+    elif lists[0] == 'APP':
+        assert len(lists) == 3
+        lhs = lists_to_nodes(lists[1])
+        rhs = lists_to_nodes(lists[2])
         return Application(lhs, rhs)
-    elif lol[0] == 'VAR':
-        assert len(lol) == 2
-        return Variable(lol[1])
+    elif lists[0] == 'VAR':
+        assert len(lists) == 2
+        return Variable(lists[1])
     # STLC types
-    if lol[0] == 'BASE':
-        assert len(lol) == 2 
-        var_name = lol[1]
+    if lists[0] == 'BASE':
+        assert len(lists) == 2 
+        var_name = lists[1]
         return BaseType(var_name)
-    elif lol[0] in ['ARROW', '→']:
-        assert len(lol) == 3
-        lhs = lists_to_nodes(lol[1])
-        rhs = lists_to_nodes(lol[2])
+    elif lists[0] in ['ARROW', '→']:
+        assert len(lists) == 3
+        lhs = lists_to_nodes(lists[1])
+        rhs = lists_to_nodes(lists[2])
         return FunctionType(lhs, rhs)        
     else:
-        raise SyntaxError('stlc unrecognized: ' + str(lol[0]))
+        raise SyntaxError('stlc unrecognized: ' + str(lists[0]))
 
 def tokens_to_lists(tokens):
     if len(tokens) == 0:
@@ -145,53 +169,3 @@ def parse(expr:str):
     lists = lispy_to_lists(expr)
     tree = lists_to_nodes(lists)
     return tree
-
-#------------------------------------------------------------------------------
-# main
-#------------------------------------------------------------------------------
-
-def main():
-    #parse(r'a')
-
-    # Examples of closed terms, i.e. terms typable in the empty context, are:
-
-    # I = λx:α.x
-    result = parse('(λ x (BASE α) (VAR x))')
-    assert str(result.type_assignment({})) == '(α → α)'
-
-    # K = λx:α.λy:β.x
-    result = parse('(λ x (BASE α) (λ y (BASE β) (VAR x)))')
-    assert str(result.type_assignment({})) == '(α → (β → α))'
-
-    # S = λx:α→(β→γ).λy:α→β.λz:α.((x z) (y z))
-    result = parse('''
-        (λ x (→ (BASE α) (→ (BASE β) (BASE γ)))
-         (λ y (→ (BASE α) (BASE β))
-          (λ z (BASE α)
-           (APP
-            (APP (VAR x) (VAR z))
-            (APP (VAR y) (VAR z))
-           ))))''')
-    assert str(result.type_assignment({})) == '((α → (β → γ)) → ((α → β) → (α → γ)))'
-
-    # https://math.stackexchange.com/questions/1985352/how-to-prove-a-a%E2%86%92b%E2%8A%A2b-without-double-negation-elimination
-    # prove ((A -> Q) -> Q) -> (B -> Q) -> (A -> B) -> Q
-    result = parse('''
-        (λ x (→ (→ (BASE A) (BASE Q)) (BASE Q))
-         (λ y (→ (BASE B) (BASE Q))
-          (λ z (→ (BASE A) (BASE B))
-           (APP
-            (VAR x)
-            (λ v (BASE A)
-              (APP
-               (VAR y)
-               (APP
-                (VAR z)
-                (VAR v)
-               )))))))''')
-    assert str(result.type_assignment({})) == '(((A → Q) → Q) → ((B → Q) → ((A → B) → Q)))'
-
-    print('PASS')
-
-if __name__ == '__main__':
-    main()
