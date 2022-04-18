@@ -26,3 +26,6 @@ Use the [quick reference](./quickref.html) for a review of all the permitted rul
 |([local](./exercise_g2.html))|p ⇒ ¬q, q ⊢ ¬p|modus tollens variation, Be-Fitched technique G2|
 |([local](./exercise_disjunction_elimination.html))|p ∨ q, ¬p ⊢ ¬q|disjunctive syllogism|
 |([local](./exercise_material_implication.html))|¬p ∨ q ⊢ p ⇒ q|material implication, reversed|
+|([local](./exercise_double_negation.html))|⊢ ¬¬p ⇒ p|double negation|
+|([local](./exercise_contrapositive.html))|p ⇒ q ⊢ ¬q ⇒ ¬p |contrapositive|
+|([local](./exercise_impl_conv_bicond.html))|p ⇒ q, ¬p ⇒ ¬q ⊢ p ⇔ q|implication and converse leads to biconditional|
