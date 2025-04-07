@@ -1,4 +1,4 @@
-Write proofs in python by making implementing a domain-specific language (DSL) / fluid interface. Proofs look like this:
+Write proofs in python by making implementing a domain-specific language (DSL) / fluent interface. Proofs look like this:
 
 ### Example 1:
 
